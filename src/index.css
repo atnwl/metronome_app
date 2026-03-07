@@ -481,6 +481,20 @@ input[type=range]::-moz-range-track {
   background: var(--list-item-hover);
 }
 
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem 0 0.25rem;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .item-cover {
   width: 48px;
   height: 48px;

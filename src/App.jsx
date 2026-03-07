@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw } from 'lucide-react';
+import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -7,6 +10,60 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 const placeholderGradients = [
   'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
 ];
+
+const SortableSongItem = ({ song, activeSongId, onSelect, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: song.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.7 : 1,
+    boxShadow: isDragging ? '0px 10px 20px rgba(0,0,0,0.3)' : 'none',
+    position: 'relative',
+    zIndex: isDragging ? 99 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`setlist-item ${song.id === activeSongId ? 'active' : ''}`}
+      onClick={() => onSelect(song.id)}
+    >
+      <div
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical size={20} />
+      </div>
+      <div className="item-cover" style={{ background: song.albumArt ? 'transparent' : song.gradient }}>
+        {song.albumArt ? (
+          <img src={song.albumArt} alt="Cover" />
+        ) : (
+          <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
+        )}
+      </div>
+      <div className="item-info">
+        <div className="item-title">{song.title}</div>
+        <div className="item-bpm">{song.bpm} BPM</div>
+      </div>
+      <div className="item-actions">
+        <button className="delete-btn" onClick={(e) => onDelete(song.id, e)}>
+          <Trash2 size={18} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const MetronomeApp = () => {
   const [songs, setSongs] = useState(() => {
@@ -244,6 +301,29 @@ const MetronomeApp = () => {
     e.target.value = null; // reset
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Requires a 5px movement before dragging starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setSongs((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   if (!activeSong) return null;
 
   // Background visual is determined by either generic Gradient or sampled from album cover (future API)
@@ -346,34 +426,30 @@ const MetronomeApp = () => {
             {songs.length === 0 ? (
               <div className="empty-state">No songs in Setlist</div>
             ) : (
-              songs.map((song) => (
-                <div
-                  key={song.id}
-                  className={`setlist-item ${song.id === activeSongId ? 'active' : ''}`}
-                  onClick={() => {
-                    setActiveSongId(song.id);
-                    setIsEditing(false); // Reset lock state when clicking a new song
-                    setIsRunning(false);
-                  }}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={songs.map(s => s.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <div className="item-cover" style={{ background: song.albumArt ? 'transparent' : song.gradient }}>
-                    {song.albumArt ? (
-                      <img src={song.albumArt} alt="Cover" />
-                    ) : (
-                      <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
-                    )}
-                  </div>
-                  <div className="item-info">
-                    <div className="item-title">{song.title}</div>
-                    <div className="item-bpm">{song.bpm} BPM</div>
-                  </div>
-                  <div className="item-actions">
-                    <button className="delete-btn" onClick={(e) => deleteSong(song.id, e)}>
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))
+                  {songs.map((song) => (
+                    <SortableSongItem
+                      key={song.id}
+                      song={song}
+                      activeSongId={activeSongId}
+                      onSelect={(id) => {
+                        setActiveSongId(id);
+                        setIsEditing(false); // Reset lock state when clicking a new song
+                        setIsRunning(false);
+                      }}
+                      onDelete={deleteSong}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         </section>
