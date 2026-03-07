@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw, GripVertical, ClipboardPaste, ListX } from 'lucide-react';
+import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw, GripVertical, ClipboardPaste, ListX, MoreVertical, HelpCircle } from 'lucide-react';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -88,6 +90,7 @@ const MetronomeApp = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dragControls = useDragControls();
   const listRef = useRef(null);
 
@@ -197,6 +200,34 @@ const MetronomeApp = () => {
   const audioContext = useRef(null);
   const timerID = useRef(null);
   const beatNumber = useRef(0);
+
+  const launchTutorial = () => {
+    setIsMenuOpen(false);
+    const driverObj = driver({
+      showProgress: true,
+      animate: true,
+      steps: [
+        { element: '.play-pause-btn', popover: { title: 'Playback', description: 'Start, stop, and control the metronome pulse right here.', align: 'center' } },
+        { element: '.song-info', popover: { title: 'Edit Track', description: 'Tap the pencil to change the title. Editing also unlocks the BPM slider.', side: "top", align: 'start' } },
+        { element: '.tour-menu-btn', popover: { title: 'Toolbar Menu', description: 'Open this to mass-import documents, paste setlists, toggle theme, or launch this tutorial again.', side: 'bottom', align: 'end' } },
+        { element: '.setlist-section', popover: { title: 'Swipe Drawer', description: 'Swipe this drawer UP to reveal your entire setlist. Use the grips next to any song to reorder them seamlessly.', side: 'top', align: 'center' } },
+      ],
+      onDestroyStarted: () => {
+        driverObj.destroy();
+      }
+    });
+    driverObj.drive();
+    localStorage.setItem('probeat_tour_completed', 'true');
+  };
+
+  useEffect(() => {
+    const isCompleted = localStorage.getItem('probeat_tour_completed') === 'true';
+    if (!isCompleted) {
+      setTimeout(() => {
+        launchTutorial();
+      }, 1000);
+    }
+  }, []);
 
   // Play a click sound
   const playClick = () => {
@@ -392,10 +423,10 @@ const MetronomeApp = () => {
   if (!activeSong) return null;
 
   const bgVisual = (activeSong.albumArt && activeSong.albumArt !== 'not_found') ? `url(${activeSong.albumArt})` : (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none');
-  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 260) : 400;
+  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 200) : 400;
 
   return (
-    <>
+    <div onClick={() => isMenuOpen && setIsMenuOpen(false)}>
       <div
         className="blur-bg"
         style={{ backgroundImage: bgVisual }}
@@ -405,22 +436,35 @@ const MetronomeApp = () => {
       <div className="app-wrapper">
         <header className="top-nav">
           <div className="logo-text">ProBeat Setlist</div>
-          <div className="header-actions">
-            <button className="icon-btn" onClick={() => window.location.reload()} title="Refresh App">
-              <RefreshCw size={20} />
+          <div className="header-actions" style={{ position: 'relative' }}>
+            <button className="icon-btn tour-menu-btn" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} title="Menu">
+              <MoreVertical size={20} />
             </button>
-            <button className="icon-btn" onClick={() => setIsLightMode(!isLightMode)} title="Toggle Theme">
-              {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
-            </button>
-            <button className="icon-btn" onClick={handleClipboardPaste} title="Paste from Clipboard">
-              <ClipboardPaste size={20} />
-            </button>
-            <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="Import from Document">
-              <Upload size={20} />
-            </button>
-            <button className="icon-btn" onClick={clearAllSongs} title="Clear Setlist">
-              <ListX size={20} />
-            </button>
+
+            {isMenuOpen && (
+              <div className="dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => { setIsLightMode(!isLightMode); setIsMenuOpen(false); }}>
+                  {isLightMode ? <Moon size={16} /> : <Sun size={16} />} Toggle Theme
+                </button>
+                <button onClick={() => { handleClipboardPaste(); setIsMenuOpen(false); }}>
+                  <ClipboardPaste size={16} /> Paste Setlist
+                </button>
+                <button onClick={() => { fileInputRef.current?.click(); setIsMenuOpen(false); }}>
+                  <Upload size={16} /> Import Document
+                </button>
+                <div className="dropdown-divider" />
+                <button onClick={launchTutorial}>
+                  <HelpCircle size={16} /> Launch Tutorial
+                </button>
+                <button onClick={() => window.location.reload()}>
+                  <RefreshCw size={16} /> Refresh App
+                </button>
+                <div className="dropdown-divider" />
+                <button className="danger-text" onClick={() => { clearAllSongs(); setIsMenuOpen(false); }}>
+                  <ListX size={16} /> Clear Setlist
+                </button>
+              </div>
+            )}
             <input
               type="file"
               ref={fileInputRef}
@@ -549,7 +593,7 @@ const MetronomeApp = () => {
           </div>
         </motion.section>
       </div>
-    </>
+    </div>
   );
 };
 
