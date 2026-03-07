@@ -491,7 +491,7 @@ input[type=range]::-moz-range-track {
   flex-direction: column;
   overflow: hidden;
   border-top: 1px solid var(--border-light);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px);
   z-index: 50;
   box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.1);
 }
