@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw, GripVertical } from 'lucide-react';
+import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw, GripVertical, ClipboardPaste } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { motion, useDragControls } from 'framer-motion';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -86,6 +87,8 @@ const MetronomeApp = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const dragControls = useDragControls();
 
   const [activeSongId, setActiveSongId] = useState(() => songs[0]?.id);
   const activeSong = songs.find(s => s.id === activeSongId) || songs[0];
@@ -97,7 +100,7 @@ const MetronomeApp = () => {
     localStorage.setItem('spotify_setlist', JSON.stringify(songs));
   }, [songs]);
 
-  // Persist Theme (handled intrinsically by index.html too)
+  // Persist Theme
   useEffect(() => {
     localStorage.setItem('probeat_theme', isLightMode ? 'light' : 'dark');
     if (isLightMode) {
@@ -133,9 +136,7 @@ const MetronomeApp = () => {
           const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title)}&media=music&entity=song&limit=1`);
           const data = await res.json();
           if (data.results && data.results.length > 0) {
-            // Grab Apple Music 600x600 high res album cover
             const url = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
-            // Safely update state without jumping the active cursor manually
             setSongs(prev => prev.map(s => s.id === activeSong.id ? { ...s, albumArt: url } : s));
           }
         } catch (e) {
@@ -161,7 +162,6 @@ const MetronomeApp = () => {
     osc.connect(gainNode);
     gainNode.connect(audioContext.current.destination);
 
-    // Higher pitch for downbeat
     const isDownbeat = beatNumber.current === 0;
     osc.frequency.value = isDownbeat ? 1200 : 800;
     osc.type = "sine";
@@ -218,7 +218,7 @@ const MetronomeApp = () => {
   const addNewSong = () => {
     const newSong = {
       id: generateId(),
-      title: "", // clear out the placeholder so it's ready to type
+      title: "",
       bpm: 120,
       gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)],
       albumArt: null
@@ -226,7 +226,8 @@ const MetronomeApp = () => {
     setSongs(prev => [...prev, newSong]);
     setActiveSongId(newSong.id);
     setIsRunning(false);
-    setIsEditing(true); // Auto-unlock UI editing!
+    setIsEditing(true);
+    setIsDrawerOpen(true); // Open drawer instantly to type
   };
 
   const deleteSong = (id, e) => {
@@ -244,67 +245,76 @@ const MetronomeApp = () => {
     });
   };
 
+  const parseSongsFromText = (text) => {
+    const lines = text.split(/\r?\n/);
+    const parsedSongs = lines.reduce((acc, line) => {
+      let title = "Imported Song";
+      let bpm = 120;
+      let found = false;
+
+      const matchEnd = line.match(/^(.*?)[^\w]*(\d{2,3})(?:\s*bpm)?$/i);
+      if (matchEnd) {
+        title = matchEnd[1].trim();
+        bpm = parseInt(matchEnd[2], 10);
+        found = true;
+      } else {
+        const matchStart = line.match(/^(\d{2,3})(?:\s*bpm)?[^\w]*(.*?)$/i);
+        if (matchStart) {
+          bpm = parseInt(matchStart[1], 10);
+          title = matchStart[2].trim();
+          found = true;
+        }
+      }
+
+      if (found && bpm >= 40 && bpm <= 300) {
+        acc.push({
+          id: generateId(),
+          title: title || "Imported Song",
+          bpm,
+          gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)],
+          albumArt: null
+        });
+      }
+      return acc;
+    }, []);
+
+    if (parsedSongs.length > 0) {
+      setSongs(prev => [...prev, ...parsedSongs]);
+      alert(`Successfully imported ${parsedSongs.length} songs.`);
+      setIsDrawerOpen(true);
+    } else {
+      alert("Couldn't parse any readable 'Song Title - BPM' pairs.");
+    }
+  };
+
   const fileInputRef = useRef(null);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Allow ANY MIME TYPE through since device Drive/iCloud extensions vary wildly, 
-    // We treat everything as generic text parsing fallback.
     const reader = new FileReader();
     reader.onload = (event) => {
-      const text = event.target.result;
-      const lines = text.split(/\r?\n/);
-
-      const parsedSongs = lines.reduce((acc, line) => {
-        let title = "Imported Song";
-        let bpm = 120;
-        let found = false;
-
-        // Match numbers at the end
-        const matchEnd = line.match(/^(.*?)[^\w]*(\d{2,3})(?:\s*bpm)?$/i);
-        if (matchEnd) {
-          title = matchEnd[1].trim();
-          bpm = parseInt(matchEnd[2], 10);
-          found = true;
-        } else {
-          // Alternative match numbers at the beginning
-          const matchStart = line.match(/^(\d{2,3})(?:\s*bpm)?[^\w]*(.*?)$/i);
-          if (matchStart) {
-            bpm = parseInt(matchStart[1], 10);
-            title = matchStart[2].trim();
-            found = true;
-          }
-        }
-
-        if (found && bpm >= 40 && bpm <= 300) {
-          acc.push({
-            id: generateId(),
-            title: title || "Imported Song",
-            bpm,
-            gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)],
-            albumArt: null
-          });
-        }
-        return acc;
-      }, []);
-
-      if (parsedSongs.length > 0) {
-        setSongs(prev => [...prev, ...parsedSongs]);
-        alert(`Successfully imported ${parsedSongs.length} songs.`);
-      } else {
-        alert("Couldn't parse any readable 'Song Title - BPM' pairs in that document.");
-      }
+      parseSongsFromText(event.target.result);
     };
     reader.readAsText(file);
     e.target.value = null; // reset
   };
 
+  const handleClipboardPaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) throw new Error("Clipboard is empty.");
+      parseSongsFromText(text);
+    } catch (err) {
+      alert("Please copy a setlist block of text to your clipboard first and grant clipboard permission if prompted!");
+    }
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // Requires a 5px movement before dragging starts
+        distance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -326,8 +336,8 @@ const MetronomeApp = () => {
 
   if (!activeSong) return null;
 
-  // Background visual is determined by either generic Gradient or sampled from album cover (future API)
   const bgVisual = activeSong.albumArt ? `url(${activeSong.albumArt})` : (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none');
+  const drawerDragDistance = typeof window !== 'undefined' ? window.innerHeight * 0.45 : 400;
 
   return (
     <>
@@ -346,6 +356,9 @@ const MetronomeApp = () => {
             </button>
             <button className="icon-btn" onClick={() => setIsLightMode(!isLightMode)} title="Toggle Theme">
               {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+            <button className="icon-btn" onClick={handleClipboardPaste} title="Paste from Clipboard">
+              <ClipboardPaste size={20} />
             </button>
             <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="Import from Document">
               <Upload size={20} />
@@ -412,7 +425,31 @@ const MetronomeApp = () => {
           </div>
         </section>
 
-        <section className="setlist-section">
+        <motion.section
+          className="setlist-section"
+          drag="y"
+          dragControls={dragControls}
+          dragListener={false}
+          dragConstraints={{ top: -drawerDragDistance, bottom: 0 }}
+          dragElastic={0.1}
+          onDragEnd={(e, info) => {
+            if (info.offset.y < -50 || info.velocity.y < -500) {
+              setIsDrawerOpen(true);
+            } else if (info.offset.y > 50 || info.velocity.y > 500) {
+              setIsDrawerOpen(false);
+            }
+          }}
+          animate={{ y: isDrawerOpen ? -drawerDragDistance : 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        >
+          {/* A large hit area around the visual pill to easily grab */}
+          <div
+            style={{ padding: '0 2rem 1rem 2rem', cursor: 'grab', touchAction: 'none' }}
+            onPointerDown={(e) => dragControls.start(e)}
+          >
+            <div className="drawer-pill" />
+          </div>
+
           <div className="setlist-header">
             <h2>Up Next</h2>
             <div className="add-song-row">
@@ -452,7 +489,7 @@ const MetronomeApp = () => {
               </DndContext>
             )}
           </div>
-        </section>
+        </motion.section>
       </div>
     </>
   );
