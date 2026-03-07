@@ -200,6 +200,7 @@ const MetronomeApp = () => {
       steps: [
         { element: '.play-pause-btn', popover: { title: 'Playback', description: 'Start, stop, and control the metronome pulse right here.', align: 'center' } },
         { element: '.song-info', popover: { title: 'Edit Track', description: 'Tap the pencil to change the title. Editing also unlocks the BPM slider.', side: "top", align: 'start' } },
+        { element: '.add-btn-main', popover: { title: 'Add Song', description: 'Quickly add a new track to your setlist from here.', side: "left", align: 'center' } },
         { element: '.tour-menu-btn', popover: { title: 'Toolbar Menu', description: 'Open this to mass-import documents, paste setlists, toggle theme, or launch this tutorial again.', side: 'bottom', align: 'end' } },
         { element: '.drawer-hit-area', popover: { title: 'Swipe Drawer', description: 'Swipe this drawer UP to reveal your entire setlist. Use the grips next to any song to reorder them seamlessly.', side: 'top', align: 'center' } },
       ]
