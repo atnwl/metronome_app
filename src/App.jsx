@@ -35,11 +35,6 @@ const MetronomeApp = () => {
 
   const [isRunning, setIsRunning] = useState(false);
 
-  // Reset editing mode when switching songs
-  useEffect(() => {
-    setIsEditing(false);
-  }, [activeSongId]);
-
   // Persist Setlist
   useEffect(() => {
     localStorage.setItem('spotify_setlist', JSON.stringify(songs));
@@ -166,7 +161,7 @@ const MetronomeApp = () => {
   const addNewSong = () => {
     const newSong = {
       id: generateId(),
-      title: "New Track",
+      title: "", // clear out the placeholder so it's ready to type
       bpm: 120,
       gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)],
       albumArt: null
@@ -174,6 +169,7 @@ const MetronomeApp = () => {
     setSongs(prev => [...prev, newSong]);
     setActiveSongId(newSong.id);
     setIsRunning(false);
+    setIsEditing(true); // Auto-unlock UI editing!
   };
 
   const deleteSong = (id, e) => {
@@ -298,6 +294,8 @@ const MetronomeApp = () => {
               onChange={(e) => handleTitleChange(e.target.value)}
               className="title-input"
               readOnly={!isEditing}
+              placeholder="Song Title..."
+              autoFocus={isEditing}
             />
             <div className="bpm-row">
               <div className={`bpm-number ${isRunning ? 'pulse' : ''}`}>{activeSong.bpm}</div>
