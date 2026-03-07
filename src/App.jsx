@@ -93,6 +93,7 @@ const MetronomeApp = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dragControls = useDragControls();
   const listRef = useRef(null);
+  const scrollTimeoutRef = useRef(null);
 
   const [activeSongId, setActiveSongId] = useState(() => songs[0]?.id);
   const activeSong = songs.find(s => s.id === activeSongId) || songs[0];
@@ -101,31 +102,39 @@ const MetronomeApp = () => {
 
   // Auto-scroll Setlist Drawer to prioritize UI space
   useEffect(() => {
-    if (listRef.current) {
-      setTimeout(() => {
-        if (!listRef.current) return;
-        const activeEl = listRef.current.querySelector('.setlist-item.active');
-        if (activeEl) {
-          const index = songs.findIndex(s => s.id === activeSongId);
-          // Target slightly above the active element to provide visual padding when swiped fully open
-          let targetScroll = activeEl.offsetTop - 12;
+    if (!listRef.current) return;
 
-          if (!isDrawerOpen && index < songs.length - 1) {
-            const nextEl = activeEl.nextElementSibling;
-            if (nextEl) {
-              // Lock it exactly to the top edge of the next element when minimized
-              targetScroll = nextEl.offsetTop;
-            }
+    // Clear any pending scroll to prevent race conditions
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+
+    scrollTimeoutRef.current = setTimeout(() => {
+      if (!listRef.current) return;
+      const activeEl = listRef.current.querySelector('.setlist-item.active');
+      if (activeEl) {
+        const index = songs.findIndex(s => s.id === activeSongId);
+        // Provide standard vertical padding when open
+        let targetScroll = activeEl.offsetTop - 20;
+
+        // When closed, perfectly align the very top of the NEXT track 
+        // to be visible in that 150px-200px gap
+        if (!isDrawerOpen && index < songs.length - 1) {
+          const nextEl = activeEl.nextElementSibling;
+          if (nextEl) {
+            targetScroll = nextEl.offsetTop;
           }
-
-          listRef.current.scrollTo({
-            top: Math.max(0, targetScroll),
-            behavior: 'smooth'
-          });
         }
-      }, 250); // Delay to let height animations/renders settle
-    }
-  }, [activeSongId, isDrawerOpen]);
+
+        listRef.current.scrollTo({
+          top: Math.max(0, targetScroll),
+          behavior: 'smooth'
+        });
+      }
+    }, 300); // 300ms covers the Framer Motion spring transition duration
+
+    return () => {
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, [activeSongId, isDrawerOpen, songs.length]);
 
   // Persist Setlist
   useEffect(() => {
