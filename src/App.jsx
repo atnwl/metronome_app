@@ -18,10 +18,10 @@ const MetronomeApp = () => {
     try {
       const item = localStorage.getItem('spotify_setlist');
       return item ? JSON.parse(item) : [
-        { id: generateId(), title: "Welcome to ProBeat", bpm: 120, gradient: placeholderGradients[0] }
+        { id: generateId(), title: "Welcome to ProBeat", bpm: 120, gradient: placeholderGradients[0], albumArt: null }
       ];
     } catch {
-      return [{ id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0] }];
+      return [{ id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0], albumArt: null }];
     }
   });
 
@@ -50,7 +50,7 @@ const MetronomeApp = () => {
     localStorage.setItem('spotify_setlist', JSON.stringify(songs));
   }, [songs]);
 
-  // Persist Theme & apply class to body
+  // Persist Theme (handled intrinsically by index.html too)
   useEffect(() => {
     localStorage.setItem('probeat_theme', isLightMode ? 'light' : 'dark');
     if (isLightMode) {
@@ -62,12 +62,44 @@ const MetronomeApp = () => {
 
   const bpmRef = useRef(120);
 
-  // Keep the ref in sync with state for accurate timing without re-triggering effects
+  // Keep the ref in sync with state for accurate timing
   useEffect(() => {
     if (activeSong) {
       bpmRef.current = activeSong.bpm;
     }
   }, [activeSong?.bpm]);
+
+
+  const updateActiveSong = (updates) => {
+    setSongs(prev => prev.map(s => s.id === activeSongId ? { ...s, ...updates } : s));
+  };
+
+  // Album Artwork Fetching Hook (Debounced 1.5s)
+  useEffect(() => {
+    if (!activeSong) return;
+    const title = activeSong.title?.trim();
+    if (!title || title.startsWith('New ') || title.startsWith('Imported')) return;
+
+    if (!activeSong.albumArt) {
+      const timeoutId = setTimeout(async () => {
+        try {
+          const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title)}&media=music&entity=song&limit=1`);
+          const data = await res.json();
+          if (data.results && data.results.length > 0) {
+            // Grab Apple Music 600x600 high res album cover
+            const url = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+            // Safely update state without jumping the active cursor manually
+            setSongs(prev => prev.map(s => s.id === activeSong.id ? { ...s, albumArt: url } : s));
+          }
+        } catch (e) {
+          console.error("Failed to fetch artwork from iTunes", e);
+        }
+      }, 1500);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeSong?.title, activeSong?.albumArt, activeSong?.id]);
+
 
   const audioContext = useRef(null);
   const timerID = useRef(null);
@@ -93,7 +125,7 @@ const MetronomeApp = () => {
     osc.start(audioContext.current.currentTime);
     osc.stop(audioContext.current.currentTime + 0.1);
 
-    beatNumber.current = (beatNumber.current + 1) % 4; // 4/4 time signature
+    beatNumber.current = (beatNumber.current + 1) % 4;
   };
 
   useEffect(() => {
@@ -115,7 +147,7 @@ const MetronomeApp = () => {
       if (audioContext.current.state === 'suspended') {
         audioContext.current.resume();
       }
-      beatNumber.current = 0; // Reset beat on play
+      beatNumber.current = 0;
       expected = Date.now();
       scheduleNote();
     } else {
@@ -125,18 +157,15 @@ const MetronomeApp = () => {
     return () => {
       if (timerID.current) clearTimeout(timerID.current);
     };
-  }, [isRunning]); // ONLY re-run on start/stop
+  }, [isRunning]);
 
-  const updateActiveSong = (updates) => {
-    setSongs(prev => prev.map(s => s.id === activeSongId ? { ...s, ...updates } : s));
-  };
 
   const handleBpmChange = (newBpm) => {
     updateActiveSong({ bpm: newBpm });
   };
 
   const handleTitleChange = (newTitle) => {
-    updateActiveSong({ title: newTitle });
+    updateActiveSong({ title: newTitle, albumArt: null }); // allow re-fetch
   };
 
   const addNewSong = () => {
@@ -144,7 +173,8 @@ const MetronomeApp = () => {
       id: generateId(),
       title: "New Track",
       bpm: 120,
-      gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)]
+      gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)],
+      albumArt: null
     };
     setSongs(prev => [...prev, newSong]);
     setActiveSongId(newSong.id);
@@ -156,7 +186,7 @@ const MetronomeApp = () => {
     setSongs(prev => {
       const filtered = prev.filter(s => s.id !== id);
       if (filtered.length === 0) {
-        return [{ id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0] }];
+        return [{ id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0], albumArt: null }];
       }
       if (id === activeSongId) {
         setActiveSongId(filtered[0].id);
@@ -172,17 +202,14 @@ const MetronomeApp = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Allow ANY MIME TYPE through since device Drive/iCloud extensions vary wildly, 
+    // We treat everything as generic text parsing fallback.
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target.result;
       const lines = text.split(/\r?\n/);
 
       const parsedSongs = lines.reduce((acc, line) => {
-        // Find line formats like:
-        // "Song Name - 120"
-        // "Song Name, 120 BPM"
-        // "120 Song Name"
-
         let title = "Imported Song";
         let bpm = 120;
         let found = false;
@@ -194,7 +221,7 @@ const MetronomeApp = () => {
           bpm = parseInt(matchEnd[2], 10);
           found = true;
         } else {
-          // Alternatively match numbers at the beginning
+          // Alternative match numbers at the beginning
           const matchStart = line.match(/^(\d{2,3})(?:\s*bpm)?[^\w]*(.*?)$/i);
           if (matchStart) {
             bpm = parseInt(matchStart[1], 10);
@@ -208,7 +235,8 @@ const MetronomeApp = () => {
             id: generateId(),
             title: title || "Imported Song",
             bpm,
-            gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)]
+            gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)],
+            albumArt: null
           });
         }
         return acc;
@@ -218,21 +246,23 @@ const MetronomeApp = () => {
         setSongs(prev => [...prev, ...parsedSongs]);
         alert(`Successfully imported ${parsedSongs.length} songs.`);
       } else {
-        alert("Couldn't find any valid 'Song Title - BPM' matches in this file.");
+        alert("Couldn't parse any readable 'Song Title - BPM' pairs in that document.");
       }
     };
     reader.readAsText(file);
-    // Reset input
-    e.target.value = null;
+    e.target.value = null; // reset
   };
 
   if (!activeSong) return null;
+
+  // Background visual is determined by either generic Gradient or sampled from album cover (future API)
+  const bgVisual = activeSong.albumArt ? `url(${activeSong.albumArt})` : (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none');
 
   return (
     <>
       <div
         className="blur-bg"
-        style={{ backgroundImage: activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none', background: activeSong.gradient }}
+        style={{ backgroundImage: bgVisual }}
       />
       <div className="blur-overlay" />
 
@@ -243,12 +273,12 @@ const MetronomeApp = () => {
             <button className="icon-btn" onClick={() => setIsLightMode(!isLightMode)} title="Toggle Theme">
               {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
             </button>
-            <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="Import from Text File">
+            <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="Import from Document">
               <Upload size={20} />
             </button>
             <input
               type="file"
-              accept=".txt,.csv"
+              accept="*/*"
               ref={fileInputRef}
               className="hidden-input"
               onChange={handleFileUpload}
@@ -257,8 +287,12 @@ const MetronomeApp = () => {
         </header>
 
         <section className="now-playing">
-          <div className="album-art-container" style={{ background: activeSong.gradient }}>
-            <Music size={64} className="album-placeholder" style={{ opacity: 0.5 }} />
+          <div className="album-art-container" style={{ background: activeSong.albumArt ? 'transparent' : activeSong.gradient }}>
+            {activeSong.albumArt ? (
+              <img src={activeSong.albumArt} alt={activeSong.title} className="album-art-img" />
+            ) : (
+              <Music size={64} className="album-placeholder" style={{ opacity: 0.5 }} />
+            )}
           </div>
 
           <div className="song-info">
@@ -323,11 +357,16 @@ const MetronomeApp = () => {
                   className={`setlist-item ${song.id === activeSongId ? 'active' : ''}`}
                   onClick={() => {
                     setActiveSongId(song.id);
+                    setIsEditing(false); // Reset lock state when clicking a new song
                     setIsRunning(false);
                   }}
                 >
-                  <div className="item-cover" style={{ background: song.gradient }}>
-                    <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
+                  <div className="item-cover" style={{ background: song.albumArt ? 'transparent' : song.gradient }}>
+                    {song.albumArt ? (
+                      <img src={song.albumArt} alt="Cover" />
+                    ) : (
+                      <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
+                    )}
                   </div>
                   <div className="item-info">
                     <div className="item-title">{song.title}</div>
