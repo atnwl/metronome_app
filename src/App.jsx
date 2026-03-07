@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil } from 'lucide-react';
+import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -265,6 +265,9 @@ const MetronomeApp = () => {
         <header className="top-nav">
           <div className="logo-text">ProBeat Setlist</div>
           <div className="header-actions">
+            <button className="icon-btn" onClick={() => window.location.reload()} title="Refresh App">
+              <RefreshCw size={20} />
+            </button>
             <button className="icon-btn" onClick={() => setIsLightMode(!isLightMode)} title="Toggle Theme">
               {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
             </button>
