@@ -210,7 +210,7 @@ const MetronomeApp = () => {
         { element: '.play-pause-btn', popover: { title: 'Playback', description: 'Start, stop, and control the metronome pulse right here.', align: 'center' } },
         { element: '.song-info', popover: { title: 'Edit Track', description: 'Tap the pencil to change the title. Editing also unlocks the BPM slider.', side: "top", align: 'start' } },
         { element: '.tour-menu-btn', popover: { title: 'Toolbar Menu', description: 'Open this to mass-import documents, paste setlists, toggle theme, or launch this tutorial again.', side: 'bottom', align: 'end' } },
-        { element: '.setlist-section', popover: { title: 'Swipe Drawer', description: 'Swipe this drawer UP to reveal your entire setlist. Use the grips next to any song to reorder them seamlessly.', side: 'top', align: 'center' } },
+        { element: '.drawer-hit-area', popover: { title: 'Swipe Drawer', description: 'Swipe this drawer UP to reveal your entire setlist. Use the grips next to any song to reorder them seamlessly.', side: 'top', align: 'center' } },
       ],
       onDestroyStarted: () => {
         driverObj.destroy();
@@ -450,7 +450,7 @@ const MetronomeApp = () => {
                   <ClipboardPaste size={16} /> Paste Setlist
                 </button>
                 <button onClick={() => { fileInputRef.current?.click(); setIsMenuOpen(false); }}>
-                  <Upload size={16} /> Import Document
+                  <Upload size={16} /> Upload Setlist
                 </button>
                 <div className="dropdown-divider" />
                 <button onClick={launchTutorial}>
@@ -546,6 +546,7 @@ const MetronomeApp = () => {
         >
           {/* A large hit area around the visual pill to easily grab */}
           <div
+            className="drawer-hit-area"
             style={{ padding: '0 2rem 1rem 2rem', cursor: 'grab', touchAction: 'none' }}
             onPointerDown={(e) => dragControls.start(e)}
           >
