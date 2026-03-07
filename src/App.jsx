@@ -115,10 +115,11 @@ const MetronomeApp = () => {
         // Provide standard vertical padding when open
         let targetScroll = activeEl.offsetTop - 20;
 
-        // When closed, align the ACTIVE song to the top of the list container
-        // This ensures the NEXT song is perfectly visible in the ~200px gap below the list header
+        // When closed, perfectly align the ACTIVE track to the container top.
+        // Combined with the -230px drawer height, this is precisely calibrated
+        // to show the current song AND the full next song.
         if (!isDrawerOpen) {
-          targetScroll = activeEl.offsetTop - 15;
+          targetScroll = activeEl.offsetTop;
         }
 
         listRef.current.scrollTo({
@@ -496,16 +497,21 @@ const MetronomeApp = () => {
               autoFocus={isEditing}
             />
             <div className="bpm-row">
-              <div className={`bpm-number ${isRunning ? 'pulse' : ''}`}>{activeSong.bpm}</div>
-              <div className="bpm-label-wrapper">
-                <div className="bpm-label">BPM</div>
-                <button
-                  className={`edit-btn ${isEditing ? 'active' : ''}`}
-                  onClick={() => setIsEditing(!isEditing)}
-                >
-                  <Pencil size={18} />
-                </button>
+              <div className="bpm-number-group">
+                <div className={`bpm-number ${isRunning ? 'pulse' : ''}`}>{activeSong.bpm}</div>
+                <div className="bpm-label-wrapper">
+                  <div className="bpm-label">BPM</div>
+                  <button
+                    className={`edit-btn ${isEditing ? 'active' : ''}`}
+                    onClick={() => setIsEditing(!isEditing)}
+                  >
+                    <Pencil size={18} />
+                  </button>
+                </div>
               </div>
+              <button className="add-btn-main" onClick={addNewSong} title="Add New Song">
+                <Plus size={20} />
+              </button>
             </div>
           </div>
 
@@ -547,22 +553,12 @@ const MetronomeApp = () => {
           animate={{ y: isDrawerOpen ? -drawerDragDistance : 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
-          {/* A large hit area around the visual pill to easily grab */}
           <div
             className="drawer-hit-area"
-            style={{ padding: '0 2rem 1rem 2rem', cursor: 'grab', touchAction: 'none' }}
+            style={{ padding: '0 2rem 0.5rem 2rem', cursor: 'grab', touchAction: 'none' }}
             onPointerDown={(e) => dragControls.start(e)}
           >
             <div className="drawer-pill" />
-          </div>
-
-          <div className="setlist-header">
-            <h2>Setlist</h2>
-            <div className="add-song-row">
-              <button className="add-btn" onClick={addNewSong}>
-                <Plus size={16} /> Add
-              </button>
-            </div>
           </div>
 
           <div className="setlist-list" ref={listRef}>

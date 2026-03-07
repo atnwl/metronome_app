@@ -282,8 +282,15 @@ html {
 .bpm-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: space-between;
+  width: 100%;
   margin-top: 0.5rem;
+}
+
+.bpm-number-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .bpm-label-wrapper {
@@ -332,6 +339,25 @@ html {
 
 .edit-btn.active {
   color: var(--accent);
+}
+
+.add-btn-main {
+  background: var(--border-light);
+  border: none;
+  color: var(--text-main);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-btn-main:active {
+  transform: scale(0.9);
+  background: var(--list-item-hover);
 }
 
 .slider-container {
@@ -475,7 +501,7 @@ input[type=range]::-moz-range-track {
   height: 5px;
   background: var(--text-muted);
   border-radius: 10px;
-  margin: 0 auto 1.5rem auto;
+  margin: 0 auto;
   opacity: 0.3;
 }
 
