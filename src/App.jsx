@@ -116,8 +116,8 @@ const MetronomeApp = () => {
         let targetScroll = activeEl.offsetTop - 20;
 
         // When closed, perfectly align the ACTIVE track to the container top.
-        // Combined with the -230px drawer height, this is precisely calibrated
-        // to show the current song AND the full next song.
+        // This prevents the bottom of the list from being "stuck" out of view
+        // because it offsets relative to the currently active item.
         if (!isDrawerOpen) {
           targetScroll = activeEl.offsetTop;
         }
@@ -312,6 +312,9 @@ const MetronomeApp = () => {
 
   const deleteSong = (id, e) => {
     e.stopPropagation();
+    const song = songs.find(s => s.id === id);
+    if (!window.confirm(`Are you sure you want to delete "${song?.title || 'this song'}"?`)) return;
+
     setSongs(prev => {
       const filtered = prev.filter(s => s.id !== id);
       if (filtered.length === 0) {
@@ -555,10 +558,10 @@ const MetronomeApp = () => {
         >
           <div
             className="drawer-hit-area"
-            style={{ padding: '0 2rem 0.5rem 2rem', cursor: 'grab', touchAction: 'none' }}
+            style={{ padding: '0 2rem 1.5rem 2rem', cursor: 'grab', touchAction: 'none' }}
             onPointerDown={(e) => dragControls.start(e)}
           >
-            <div className="drawer-pill" />
+            <div className="drawer-pill" style={{ height: '6px', width: '50px' }} />
           </div>
 
           <div className="setlist-list" ref={listRef}>
@@ -581,8 +584,9 @@ const MetronomeApp = () => {
                       activeSongId={activeSongId}
                       onSelect={(id) => {
                         setActiveSongId(id);
-                        setIsEditing(false); // Reset lock state when clicking a new song
+                        setIsEditing(false);
                         setIsRunning(false);
+                        setIsDrawerOpen(false); // Auto-minimize on selection
                       }}
                       onDelete={deleteSong}
                     />
