@@ -211,10 +211,7 @@ const MetronomeApp = () => {
         { element: '.song-info', popover: { title: 'Edit Track', description: 'Tap the pencil to change the title. Editing also unlocks the BPM slider.', side: "top", align: 'start' } },
         { element: '.tour-menu-btn', popover: { title: 'Toolbar Menu', description: 'Open this to mass-import documents, paste setlists, toggle theme, or launch this tutorial again.', side: 'bottom', align: 'end' } },
         { element: '.drawer-hit-area', popover: { title: 'Swipe Drawer', description: 'Swipe this drawer UP to reveal your entire setlist. Use the grips next to any song to reorder them seamlessly.', side: 'top', align: 'center' } },
-      ],
-      onDestroyStarted: () => {
-        driverObj.destroy();
-      }
+      ]
     });
     driverObj.drive();
     localStorage.setItem('probeat_tour_completed', 'true');
