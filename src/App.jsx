@@ -6,11 +6,6 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 // Helper to grab a random placeholder album color/image
 const placeholderGradients = [
   'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
-  'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
-  'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)',
-  'linear-gradient(135deg, #00B4DB 0%, #0083B0 100%)',
-  'linear-gradient(135deg, #aa4b6b 0%, #6b6b83 50%, #3b8d99 100%)',
-  'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
 ];
 
 const MetronomeApp = () => {
@@ -278,7 +273,6 @@ const MetronomeApp = () => {
             </button>
             <input
               type="file"
-              accept="*/*"
               ref={fileInputRef}
               className="hidden-input"
               onChange={handleFileUpload}

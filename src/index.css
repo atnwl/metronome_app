@@ -172,11 +172,11 @@ html {
 .album-art-container {
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-height: 45vh;
-  max-width: 350px;
+  max-height: 38vh;
+  max-width: 280px;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   overflow: hidden;
   background: var(--album-placeholder-bg);
   display: flex;
@@ -282,10 +282,9 @@ html {
   color: var(--accent);
 }
 
-/* Slider */
 .slider-container {
   width: 100%;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   transition: opacity 0.3s;
 }
 
@@ -354,13 +353,12 @@ input[type=range]::-moz-range-track {
   border-radius: 2px;
 }
 
-/* Main Controls */
 .main-controls {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .play-pause-btn {
@@ -401,9 +399,8 @@ input[type=range]::-moz-range-track {
   margin-left: 0;
 }
 
-/* Setlist Section (Bottom Sheet like scrollable area) */
 .setlist-section {
-  flex: 1;
+  flex: 1.25;
   background: var(--glass-bg);
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
