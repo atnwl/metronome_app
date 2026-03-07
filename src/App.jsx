@@ -1,24 +1,66 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon } from 'lucide-react';
+
+const generateId = () => Math.random().toString(36).substring(2, 9);
+
+// Helper to grab a random placeholder album color/image
+const placeholderGradients = [
+  'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
+  'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+  'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)',
+  'linear-gradient(135deg, #00B4DB 0%, #0083B0 100%)',
+  'linear-gradient(135deg, #aa4b6b 0%, #6b6b83 50%, #3b8d99 100%)',
+  'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+];
 
 const MetronomeApp = () => {
-  const [bpm, setBpm] = useState(120);
-  const [songTitle, setSongTitle] = useState("New Song");
-  const [isRunning, setIsRunning] = useState(false);
-  const [setlist, setSetlist] = useState(() => {
+  const [songs, setSongs] = useState(() => {
     try {
-      const item = localStorage.getItem('setlist');
-      return item ? JSON.parse(item) : {};
+      const item = localStorage.getItem('spotify_setlist');
+      return item ? JSON.parse(item) : [
+        { id: generateId(), title: "Welcome to ProBeat", bpm: 120, gradient: placeholderGradients[0] }
+      ];
     } catch {
-      return {};
+      return [{ id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0] }];
     }
   });
 
-  const bpmRef = useRef(bpm);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    try {
+      return localStorage.getItem('probeat_theme') === 'light';
+    } catch {
+      return false;
+    }
+  });
+
+  const [activeSongId, setActiveSongId] = useState(() => songs[0]?.id);
+  const activeSong = songs.find(s => s.id === activeSongId) || songs[0];
+
+  const [isRunning, setIsRunning] = useState(false);
+
+  // Persist Setlist
+  useEffect(() => {
+    localStorage.setItem('spotify_setlist', JSON.stringify(songs));
+  }, [songs]);
+
+  // Persist Theme & apply class to body
+  useEffect(() => {
+    localStorage.setItem('probeat_theme', isLightMode ? 'light' : 'dark');
+    if (isLightMode) {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
+  }, [isLightMode]);
+
+  const bpmRef = useRef(120);
 
   // Keep the ref in sync with state for accurate timing without re-triggering effects
   useEffect(() => {
-    bpmRef.current = bpm;
-  }, [bpm]);
+    if (activeSong) {
+      bpmRef.current = activeSong.bpm;
+    }
+  }, [activeSong?.bpm]);
 
   const audioContext = useRef(null);
   const timerID = useRef(null);
@@ -78,89 +120,212 @@ const MetronomeApp = () => {
     };
   }, [isRunning]); // ONLY re-run on start/stop
 
-  const saveSong = () => {
-    if (!songTitle.trim()) return;
-    const newList = { ...setlist, [songTitle]: bpm };
-    setSetlist(newList);
-    localStorage.setItem('setlist', JSON.stringify(newList));
+  const updateActiveSong = (updates) => {
+    setSongs(prev => prev.map(s => s.id === activeSongId ? { ...s, ...updates } : s));
   };
 
-  const loadSong = (title, savedBpm) => {
-    setSongTitle(title);
-    setBpm(savedBpm);
+  const handleBpmChange = (newBpm) => {
+    updateActiveSong({ bpm: newBpm });
   };
+
+  const handleTitleChange = (newTitle) => {
+    updateActiveSong({ title: newTitle });
+  };
+
+  const addNewSong = () => {
+    const newSong = {
+      id: generateId(),
+      title: "New Track",
+      bpm: 120,
+      gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)]
+    };
+    setSongs(prev => [...prev, newSong]);
+    setActiveSongId(newSong.id);
+    setIsRunning(false);
+  };
+
+  const deleteSong = (id, e) => {
+    e.stopPropagation();
+    setSongs(prev => {
+      const filtered = prev.filter(s => s.id !== id);
+      if (filtered.length === 0) {
+        return [{ id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0] }];
+      }
+      if (id === activeSongId) {
+        setActiveSongId(filtered[0].id);
+        setIsRunning(false);
+      }
+      return filtered;
+    });
+  };
+
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const lines = text.split(/\r?\n/);
+
+      const parsedSongs = lines.reduce((acc, line) => {
+        // Find line formats like:
+        // "Song Name - 120"
+        // "Song Name, 120 BPM"
+        // "120 Song Name"
+
+        let title = "Imported Song";
+        let bpm = 120;
+        let found = false;
+
+        // Match numbers at the end
+        const matchEnd = line.match(/^(.*?)[^\w]*(\d{2,3})(?:\s*bpm)?$/i);
+        if (matchEnd) {
+          title = matchEnd[1].trim();
+          bpm = parseInt(matchEnd[2], 10);
+          found = true;
+        } else {
+          // Alternatively match numbers at the beginning
+          const matchStart = line.match(/^(\d{2,3})(?:\s*bpm)?[^\w]*(.*?)$/i);
+          if (matchStart) {
+            bpm = parseInt(matchStart[1], 10);
+            title = matchStart[2].trim();
+            found = true;
+          }
+        }
+
+        if (found && bpm >= 40 && bpm <= 300) {
+          acc.push({
+            id: generateId(),
+            title: title || "Imported Song",
+            bpm,
+            gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)]
+          });
+        }
+        return acc;
+      }, []);
+
+      if (parsedSongs.length > 0) {
+        setSongs(prev => [...prev, ...parsedSongs]);
+        alert(`Successfully imported ${parsedSongs.length} songs.`);
+      } else {
+        alert("Couldn't find any valid 'Song Title - BPM' matches in this file.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    e.target.value = null;
+  };
+
+  if (!activeSong) return null;
 
   return (
     <>
-      <div className="background-orbs">
-        <div className="orb orb-1"></div>
-        <div className="orb orb-2"></div>
-      </div>
+      <div
+        className="blur-bg"
+        style={{ backgroundImage: activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none', background: activeSong.gradient }}
+      />
+      <div className="blur-overlay" />
 
-      <div className="app-container">
-        <h1 className="app-title">ProBeat Pro</h1>
+      <div className="app-wrapper">
+        <header className="top-nav">
+          <div className="logo-text">ProBeat Setlist</div>
+          <div className="header-actions">
+            <button className="icon-btn" onClick={() => setIsLightMode(!isLightMode)} title="Toggle Theme">
+              {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+            <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="Import from Text File">
+              <Upload size={20} />
+            </button>
+            <input
+              type="file"
+              accept=".txt,.csv"
+              ref={fileInputRef}
+              className="hidden-input"
+              onChange={handleFileUpload}
+            />
+          </div>
+        </header>
 
-        <input
-          className="input-field"
-          value={songTitle}
-          onChange={(e) => setSongTitle(e.target.value)}
-          placeholder="Enter Song Title..."
-        />
+        <section className="now-playing">
+          <div className="album-art-container" style={{ background: activeSong.gradient }}>
+            <Music size={64} className="album-placeholder" style={{ opacity: 0.5 }} />
+          </div>
 
-        <div className="bpm-display-wrapper">
-          <div className={`bpm-number ${isRunning ? 'pulse' : ''}`}>{bpm}</div>
-          <div className="bpm-label">BPM</div>
-        </div>
+          <div className="song-info">
+            <input
+              value={activeSong.title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className="title-input"
+            />
+            <div className="bpm-row">
+              <div className={`bpm-number ${isRunning ? 'pulse' : ''}`}>{activeSong.bpm}</div>
+              <div className="bpm-label">BPM</div>
+            </div>
+          </div>
 
-        <div className="slider-container">
-          <input
-            type="range"
-            min="40"
-            max="250"
-            value={bpm}
-            className="bpm-slider"
-            onChange={(e) => setBpm(parseInt(e.target.value))}
-          />
-        </div>
+          <div className="slider-container">
+            <input
+              type="range"
+              min="40"
+              max="250"
+              value={activeSong.bpm}
+              onChange={(e) => handleBpmChange(parseInt(e.target.value))}
+            />
+          </div>
 
-        <div className="controls-row">
-          <button
-            onClick={() => setIsRunning(!isRunning)}
-            className={`btn ${isRunning ? 'btn-stop' : 'btn-start'}`}
-            title={isRunning ? "Stop Metronome" : "Start Metronome"}
-          >
-            {isRunning ? "Stop" : "Start"}
-          </button>
+          <div className="main-controls">
+            <button
+              className={`play-pause-btn ${isRunning ? 'playing' : ''}`}
+              onClick={() => setIsRunning(!isRunning)}
+            >
+              {isRunning ? <Square fill="currentColor" /> : <Play fill="currentColor" />}
+            </button>
+          </div>
+        </section>
 
-          <button
-            onClick={saveSong}
-            className="btn btn-save"
-            title="Save preset to Setlist"
-          >
-            Save
-          </button>
-        </div>
-
-        <div className="setlist-container">
-          <h2 className="setlist-title">My Setlist</h2>
+        <section className="setlist-section">
+          <div className="setlist-header">
+            <h2>Up Next</h2>
+            <div className="add-song-row">
+              <button className="add-btn" onClick={addNewSong}>
+                <Plus size={16} /> Add
+              </button>
+            </div>
+          </div>
 
           <div className="setlist-list">
-            {Object.keys(setlist).length === 0 ? (
-              <div className="empty-state">No saved presets yet</div>
+            {songs.length === 0 ? (
+              <div className="empty-state">No songs in Setlist</div>
             ) : (
-              Object.entries(setlist).map(([title, savedBpm]) => (
+              songs.map((song) => (
                 <div
-                  key={title}
-                  className="setlist-item"
-                  onClick={() => loadSong(title, savedBpm)}
+                  key={song.id}
+                  className={`setlist-item ${song.id === activeSongId ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveSongId(song.id);
+                    setIsRunning(false);
+                  }}
                 >
-                  <span className="item-title" title={title}>{title}</span>
-                  <span className="item-bpm">{savedBpm}</span>
+                  <div className="item-cover" style={{ background: song.gradient }}>
+                    <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
+                  </div>
+                  <div className="item-info">
+                    <div className="item-title">{song.title}</div>
+                    <div className="item-bpm">{song.bpm} BPM</div>
+                  </div>
+                  <div className="item-actions">
+                    <button className="delete-btn" onClick={(e) => deleteSong(song.id, e)}>
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </section>
       </div>
     </>
   );
