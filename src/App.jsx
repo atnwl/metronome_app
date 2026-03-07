@@ -14,6 +14,24 @@ const placeholderGradients = [
   'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
 ];
 
+const SongPreview = ({ song, isActive, isNext }) => {
+  return (
+    <div className={`setlist-item ${isActive ? 'active' : ''} ${isNext ? 'next-preview' : ''}`} style={{ cursor: 'default' }}>
+      <div className="item-cover" style={{ background: (song.albumArt && song.albumArt !== 'not_found') ? 'transparent' : song.gradient }}>
+        {(song.albumArt && song.albumArt !== 'not_found') ? (
+          <img src={song.albumArt} alt="Cover" />
+        ) : (
+          <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
+        )}
+      </div>
+      <div className="item-info">
+        <div className="item-title">{song.title}</div>
+        <div className="item-bpm">{song.bpm} BPM</div>
+      </div>
+    </div>
+  );
+};
+
 const SortableSongItem = ({ song, activeSongId, onSelect, onDelete }) => {
   const {
     attributes,
@@ -99,40 +117,6 @@ const MetronomeApp = () => {
   const activeSong = songs.find(s => s.id === activeSongId) || songs[0];
 
   const [isRunning, setIsRunning] = useState(false);
-
-  // Auto-scroll Setlist Drawer to prioritize UI space
-  useEffect(() => {
-    if (!listRef.current) return;
-
-    // Clear any pending scroll to prevent race conditions
-    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-
-    scrollTimeoutRef.current = setTimeout(() => {
-      if (!listRef.current) return;
-      const activeEl = listRef.current.querySelector('.setlist-item.active');
-      if (activeEl) {
-        const index = songs.findIndex(s => s.id === activeSongId);
-        // Provide standard vertical padding when open
-        let targetScroll = activeEl.offsetTop - 20;
-
-        // When closed, perfectly align the ACTIVE track to the container top.
-        // This prevents the bottom of the list from being "stuck" out of view
-        // because it offsets relative to the currently active item.
-        if (!isDrawerOpen) {
-          targetScroll = activeEl.offsetTop;
-        }
-
-        listRef.current.scrollTo({
-          top: Math.max(0, targetScroll),
-          behavior: 'smooth'
-        });
-      }
-    }, 300); // 300ms covers the Framer Motion spring transition duration
-
-    return () => {
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-    };
-  }, [activeSongId, isDrawerOpen, songs.length]);
 
   // Persist Setlist
   useEffect(() => {
@@ -565,34 +549,48 @@ const MetronomeApp = () => {
           </div>
 
           <div className="setlist-list" ref={listRef}>
-            {songs.length === 0 ? (
-              <div className="empty-state">No songs in Setlist</div>
+            {!isDrawerOpen ? (
+              // Hard-coded 2 song view when minimized
+              <div className="minimized-preview">
+                <SongPreview song={activeSong} isActive={true} />
+                {songs.findIndex(s => s.id === activeSongId) < songs.length - 1 && (
+                  <SongPreview
+                    song={songs[songs.findIndex(s => s.id === activeSongId) + 1]}
+                    isNext={true}
+                  />
+                )}
+              </div>
             ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={songs.map(s => s.id)}
-                  strategy={verticalListSortingStrategy}
+              // Full sortable list when expanded
+              songs.length === 0 ? (
+                <div className="empty-state">No songs in Setlist</div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
                 >
-                  {songs.map((song) => (
-                    <SortableSongItem
-                      key={song.id}
-                      song={song}
-                      activeSongId={activeSongId}
-                      onSelect={(id) => {
-                        setActiveSongId(id);
-                        setIsEditing(false);
-                        setIsRunning(false);
-                        setIsDrawerOpen(false); // Auto-minimize on selection
-                      }}
-                      onDelete={deleteSong}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
+                  <SortableContext
+                    items={songs.map(s => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {songs.map((song) => (
+                      <SortableSongItem
+                        key={song.id}
+                        song={song}
+                        activeSongId={activeSongId}
+                        onSelect={(id) => {
+                          setActiveSongId(id);
+                          setIsEditing(false);
+                          setIsRunning(false);
+                          setIsDrawerOpen(false); // Auto-minimize on selection
+                        }}
+                        onDelete={deleteSong}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )
             )}
           </div>
         </motion.section>
