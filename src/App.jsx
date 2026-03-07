@@ -89,11 +89,36 @@ const MetronomeApp = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const dragControls = useDragControls();
+  const listRef = useRef(null);
 
   const [activeSongId, setActiveSongId] = useState(() => songs[0]?.id);
   const activeSong = songs.find(s => s.id === activeSongId) || songs[0];
 
   const [isRunning, setIsRunning] = useState(false);
+
+  // Auto-scroll Setlist Drawer to prioritize UI space
+  useEffect(() => {
+    if (listRef.current) {
+      setTimeout(() => {
+        if (!listRef.current) return;
+        const activeEl = listRef.current.querySelector('.setlist-item.active');
+        if (activeEl) {
+          const index = songs.findIndex(s => s.id === activeSongId);
+          let targetScroll = activeEl.offsetTop - 10;
+
+          if (!isDrawerOpen && index < songs.length - 1) {
+            // When minimized, scroll exactly past the active song so the NEXT song is at the top
+            targetScroll = activeEl.offsetTop + activeEl.offsetHeight;
+          }
+
+          listRef.current.scrollTo({
+            top: Math.max(0, targetScroll),
+            behavior: 'smooth'
+          });
+        }
+      }, 150); // Small delay to let animations/renders settle
+    }
+  }, [activeSongId, isDrawerOpen]);
 
   // Persist Setlist
   useEffect(() => {
@@ -451,7 +476,7 @@ const MetronomeApp = () => {
           </div>
 
           <div className="setlist-header">
-            <h2>Up Next</h2>
+            <h2>Setlist</h2>
             <div className="add-song-row">
               <button className="add-btn" onClick={addNewSong}>
                 <Plus size={16} /> Add
@@ -459,7 +484,7 @@ const MetronomeApp = () => {
             </div>
           </div>
 
-          <div className="setlist-list">
+          <div className="setlist-list" ref={listRef}>
             {songs.length === 0 ? (
               <div className="empty-state">No songs in Setlist</div>
             ) : (
