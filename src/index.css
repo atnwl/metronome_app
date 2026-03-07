@@ -18,7 +18,7 @@
   --overlay-bg: linear-gradient(180deg, rgba(18, 18, 18, 0.2) 0%, rgba(18, 18, 18, 1) 85%);
 }
 
-.light-mode {
+:root.light-mode {
   --bg-color: #ffffff;
   --panel-bg: #ffffff;
   --accent: #1db954;
@@ -107,7 +107,7 @@ html {
   transition: background-image 0.5s ease-in-out;
 }
 
-.light-mode .blur-bg {
+:root.light-mode .blur-bg {
   filter: blur(60px) brightness(1.3);
   opacity: 0.3;
 }
@@ -219,15 +219,28 @@ html {
   transition: opacity 0.2s, border-color 0.2s;
 }
 
-.title-input:focus {
+.title-input:not(:read-only):focus {
   border-bottom: 1px solid var(--accent);
+}
+
+.title-input:read-only {
+  pointer-events: none;
 }
 
 .bpm-row {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
   margin-top: 0.5rem;
+}
+
+.bpm-label-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  padding-bottom: 8px;
+  /* Alignment tweak */
 }
 
 .bpm-number {
@@ -248,16 +261,42 @@ html {
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.edit-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.edit-btn:active {
+  transform: scale(0.9);
+}
+
+.edit-btn.active {
+  color: var(--accent);
 }
 
 /* Slider */
 .slider-container {
   width: 100%;
   margin-bottom: 2rem;
+  transition: opacity 0.3s;
+}
+
+.slider-container.disabled {
+  opacity: 0.2;
+  pointer-events: none;
 }
 
 input[type=range] {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   background: transparent;
 }
@@ -268,6 +307,7 @@ input[type=range]:focus {
 
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   height: 16px;
   width: 16px;
   border-radius: 50%;
@@ -331,7 +371,7 @@ input[type=range]::-moz-range-track {
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.light-mode .play-pause-btn {
+:root.light-mode .play-pause-btn {
   color: #fff;
 }
 

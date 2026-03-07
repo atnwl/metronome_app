@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon } from 'lucide-react';
+import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -33,10 +33,17 @@ const MetronomeApp = () => {
     }
   });
 
+  const [isEditing, setIsEditing] = useState(false);
+
   const [activeSongId, setActiveSongId] = useState(() => songs[0]?.id);
   const activeSong = songs.find(s => s.id === activeSongId) || songs[0];
 
   const [isRunning, setIsRunning] = useState(false);
+
+  // Reset editing mode when switching songs
+  useEffect(() => {
+    setIsEditing(false);
+  }, [activeSongId]);
 
   // Persist Setlist
   useEffect(() => {
@@ -47,9 +54,9 @@ const MetronomeApp = () => {
   useEffect(() => {
     localStorage.setItem('probeat_theme', isLightMode ? 'light' : 'dark');
     if (isLightMode) {
-      document.body.classList.add('light-mode');
+      document.documentElement.classList.add('light-mode');
     } else {
-      document.body.classList.remove('light-mode');
+      document.documentElement.classList.remove('light-mode');
     }
   }, [isLightMode]);
 
@@ -259,20 +266,30 @@ const MetronomeApp = () => {
               value={activeSong.title}
               onChange={(e) => handleTitleChange(e.target.value)}
               className="title-input"
+              readOnly={!isEditing}
             />
             <div className="bpm-row">
               <div className={`bpm-number ${isRunning ? 'pulse' : ''}`}>{activeSong.bpm}</div>
-              <div className="bpm-label">BPM</div>
+              <div className="bpm-label-wrapper">
+                <div className="bpm-label">BPM</div>
+                <button
+                  className={`edit-btn ${isEditing ? 'active' : ''}`}
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  <Pencil size={18} />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="slider-container">
+          <div className={`slider-container ${!isEditing ? 'disabled' : ''}`}>
             <input
               type="range"
               min="40"
               max="250"
               value={activeSong.bpm}
               onChange={(e) => handleBpmChange(parseInt(e.target.value))}
+              disabled={!isEditing}
             />
           </div>
 
