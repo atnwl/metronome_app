@@ -19,20 +19,20 @@
 }
 
 .light-mode {
-  --bg-color: #f0f0f0;
+  --bg-color: #ffffff;
   --panel-bg: #ffffff;
   --accent: #1db954;
   --accent-hover: #1ed760;
   --danger: #e22134;
-  --text-main: #121212;
+  --text-main: #000000;
   --text-muted: #666666;
   --border-light: rgba(0, 0, 0, 0.1);
-  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-bg: rgba(255, 255, 255, 0.85);
   --list-item-hover: rgba(0, 0, 0, 0.05);
   --slider-track: rgba(0, 0, 0, 0.2);
   --play-icon-color: #ffffff;
-  --album-placeholder-bg: #e0e0e0;
-  --overlay-bg: linear-gradient(180deg, rgba(240, 240, 240, 0.2) 0%, rgba(240, 240, 240, 1) 85%);
+  --album-placeholder-bg: #f0f0f0;
+  --overlay-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 1) 85%);
 }
 
 * {
@@ -99,7 +99,8 @@ html,
 }
 
 .light-mode .blur-bg {
-  filter: blur(60px) brightness(1.2);
+  filter: blur(60px) brightness(1.3);
+  opacity: 0.3;
 }
 
 .blur-overlay {
