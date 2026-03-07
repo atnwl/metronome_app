@@ -419,6 +419,11 @@ const MetronomeApp = () => {
 
   return (
     <div onClick={() => isMenuOpen && setIsMenuOpen(false)}>
+      <div className="landscape-warning">
+        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📱</div>
+        <h2>Please rotate to Portrait</h2>
+        <p style={{ opacity: 0.6, marginTop: '0.5rem' }}>ProBeat is optimized for vertical use.</p>
+      </div>
       <div
         className="blur-bg"
         style={{ backgroundImage: bgVisual }}
