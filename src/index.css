@@ -497,50 +497,25 @@ input[type=range]::-moz-range-track {
 }
 
 .drawer-pill {
-  width: 40px;
-  height: 5px;
+  width: 50px;
+  height: 6px;
   background: var(--text-muted);
   border-radius: 10px;
   margin: 0 auto;
   opacity: 0.3;
 }
 
-.setlist-header {
+.minimized-preview {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
-.setlist-header h2 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-main);
+.next-preview {
+  opacity: 0.6;
 }
 
-.add-song-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.add-btn {
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--border-light);
-  border-radius: 24px;
-  padding: 0.4rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.add-btn:active {
-  background: var(--list-item-hover);
-}
+/* Hidden native file input */
 
 .hidden-input {
   display: none;
