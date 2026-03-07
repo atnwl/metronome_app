@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw, GripVertical, ClipboardPaste } from 'lucide-react';
+import { Play, Square, Plus, Trash2, Upload, Music, Sun, Moon, Pencil, RefreshCw, GripVertical, ClipboardPaste, ListX } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -46,8 +46,8 @@ const SortableSongItem = ({ song, activeSongId, onSelect, onDelete }) => {
       >
         <GripVertical size={20} />
       </div>
-      <div className="item-cover" style={{ background: song.albumArt ? 'transparent' : song.gradient }}>
-        {song.albumArt ? (
+      <div className="item-cover" style={{ background: (song.albumArt && song.albumArt !== 'not_found') ? 'transparent' : song.gradient }}>
+        {(song.albumArt && song.albumArt !== 'not_found') ? (
           <img src={song.albumArt} alt="Cover" />
         ) : (
           <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
@@ -104,11 +104,15 @@ const MetronomeApp = () => {
         const activeEl = listRef.current.querySelector('.setlist-item.active');
         if (activeEl) {
           const index = songs.findIndex(s => s.id === activeSongId);
-          let targetScroll = activeEl.offsetTop - 10;
+          // Target slightly above the active element to provide visual padding when swiped fully open
+          let targetScroll = activeEl.offsetTop - 12;
 
           if (!isDrawerOpen && index < songs.length - 1) {
-            // When minimized, scroll exactly past the active song so the NEXT song is at the top
-            targetScroll = activeEl.offsetTop + activeEl.offsetHeight;
+            const nextEl = activeEl.nextElementSibling;
+            if (nextEl) {
+              // Lock it exactly to the top edge of the next element when minimized
+              targetScroll = nextEl.offsetTop;
+            }
           }
 
           listRef.current.scrollTo({
@@ -116,7 +120,7 @@ const MetronomeApp = () => {
             behavior: 'smooth'
           });
         }
-      }, 150); // Small delay to let animations/renders settle
+      }, 250); // Delay to let height animations/renders settle
     }
   }, [activeSongId, isDrawerOpen]);
 
@@ -149,30 +153,46 @@ const MetronomeApp = () => {
     setSongs(prev => prev.map(s => s.id === activeSongId ? { ...s, ...updates } : s));
   };
 
-  // Album Artwork Fetching Hook (Debounced 1.5s)
-  useEffect(() => {
-    if (!activeSong) return;
-    const title = activeSong.title?.trim();
-    if (!title || title.startsWith('New ') || title.startsWith('Imported')) return;
+  // Resilient Background Artwork Fetching Queue
+  const isFetchingArt = useRef(false);
 
-    if (!activeSong.albumArt) {
-      const timeoutId = setTimeout(async () => {
+  useEffect(() => {
+    const fetchMissingArt = async () => {
+      if (isFetchingArt.current) return;
+      isFetchingArt.current = true;
+
+      const missingIndex = songs.findIndex(s =>
+        s.albumArt === null &&
+        s.title &&
+        !s.title.startsWith('New') &&
+        !s.title.startsWith('Imported')
+      );
+
+      if (missingIndex !== -1) {
+        const songToFetch = songs[missingIndex];
+        // Throttle to avoid hitting Apple rate limits
+        await new Promise(resolve => setTimeout(resolve, 800));
+
         try {
-          const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title)}&media=music&entity=song&limit=1`);
+          const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(songToFetch.title)}&media=music&entity=song&limit=1`);
           const data = await res.json();
-          if (data.results && data.results.length > 0) {
-            const url = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
-            setSongs(prev => prev.map(s => s.id === activeSong.id ? { ...s, albumArt: url } : s));
-          }
+          const url = (data.results && data.results.length > 0)
+            ? data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
+            : 'not_found';
+
+          // Use functional state update so we never read stale song arrays
+          setSongs(currentSongs => currentSongs.map(s => s.id === songToFetch.id ? { ...s, albumArt: url } : s));
         } catch (e) {
           console.error("Failed to fetch artwork from iTunes", e);
+          setSongs(currentSongs => currentSongs.map(s => s.id === songToFetch.id ? { ...s, albumArt: 'not_found' } : s));
         }
-      }, 1500);
+      }
 
-      return () => clearTimeout(timeoutId);
-    }
-  }, [activeSong?.title, activeSong?.albumArt, activeSong?.id]);
+      isFetchingArt.current = false;
+    };
 
+    fetchMissingArt();
+  }, [songs]);
 
   const audioContext = useRef(null);
   const timerID = useRef(null);
@@ -270,6 +290,16 @@ const MetronomeApp = () => {
     });
   };
 
+  const clearAllSongs = () => {
+    if (window.confirm("Are you sure you want to completely clear your Setlist?")) {
+      const defaultSong = { id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0], albumArt: null };
+      setSongs([defaultSong]);
+      setActiveSongId(defaultSong.id);
+      setIsRunning(false);
+      setIsDrawerOpen(false);
+    }
+  };
+
   const parseSongsFromText = (text) => {
     const lines = text.split(/\r?\n/);
     const parsedSongs = lines.reduce((acc, line) => {
@@ -361,7 +391,7 @@ const MetronomeApp = () => {
 
   if (!activeSong) return null;
 
-  const bgVisual = activeSong.albumArt ? `url(${activeSong.albumArt})` : (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none');
+  const bgVisual = (activeSong.albumArt && activeSong.albumArt !== 'not_found') ? `url(${activeSong.albumArt})` : (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none');
   const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 260) : 400;
 
   return (
@@ -388,6 +418,9 @@ const MetronomeApp = () => {
             <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="Import from Document">
               <Upload size={20} />
             </button>
+            <button className="icon-btn" onClick={clearAllSongs} title="Clear Setlist">
+              <ListX size={20} />
+            </button>
             <input
               type="file"
               ref={fileInputRef}
@@ -398,8 +431,8 @@ const MetronomeApp = () => {
         </header>
 
         <section className="now-playing">
-          <div className="album-art-container" style={{ background: activeSong.albumArt ? 'transparent' : activeSong.gradient }}>
-            {activeSong.albumArt ? (
+          <div className="album-art-container" style={{ background: (activeSong.albumArt && activeSong.albumArt !== 'not_found') ? 'transparent' : activeSong.gradient }}>
+            {(activeSong.albumArt && activeSong.albumArt !== 'not_found') ? (
               <img src={activeSong.albumArt} alt={activeSong.title} className="album-art-img" />
             ) : (
               <Music size={64} className="album-placeholder" style={{ opacity: 0.5 }} />
