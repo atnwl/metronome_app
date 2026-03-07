@@ -118,7 +118,7 @@ const MetronomeApp = () => {
         // When closed, align the ACTIVE song to the top of the list container
         // This ensures the NEXT song is perfectly visible in the ~200px gap below the list header
         if (!isDrawerOpen) {
-          targetScroll = activeEl.offsetTop;
+          targetScroll = activeEl.offsetTop - 15;
         }
 
         listRef.current.scrollTo({
