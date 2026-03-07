@@ -337,7 +337,7 @@ const MetronomeApp = () => {
   if (!activeSong) return null;
 
   const bgVisual = activeSong.albumArt ? `url(${activeSong.albumArt})` : (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none');
-  const drawerDragDistance = typeof window !== 'undefined' ? window.innerHeight * 0.45 : 400;
+  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 260) : 400;
 
   return (
     <>
