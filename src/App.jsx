@@ -115,13 +115,10 @@ const MetronomeApp = () => {
         // Provide standard vertical padding when open
         let targetScroll = activeEl.offsetTop - 20;
 
-        // When closed, perfectly align the very top of the NEXT track 
-        // to be visible in that 150px-200px gap
-        if (!isDrawerOpen && index < songs.length - 1) {
-          const nextEl = activeEl.nextElementSibling;
-          if (nextEl) {
-            targetScroll = nextEl.offsetTop;
-          }
+        // When closed, align the ACTIVE song to the top of the list container
+        // This ensures the NEXT song is perfectly visible in the ~200px gap below the list header
+        if (!isDrawerOpen) {
+          targetScroll = activeEl.offsetTop;
         }
 
         listRef.current.scrollTo({
