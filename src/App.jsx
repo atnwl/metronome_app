@@ -9,9 +9,16 @@ import { motion, useDragControls } from 'framer-motion';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-const SongPreview = ({ song, isActive, isNext }) => {
+const SongPreview = ({ song, isActive, isNext, onSelect }) => {
   return (
-    <div className={`setlist-item ${isActive ? 'active' : ''} ${isNext ? 'next-preview' : ''}`} style={{ cursor: 'default' }}>
+    <div
+      className={`setlist-item ${isActive ? 'active' : ''} ${isNext ? 'next-preview' : ''}`}
+      style={{ cursor: 'pointer' }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect && onSelect(song.id);
+      }}
+    >
       <div className="item-info">
         <div className="item-title">{song.title || "Untitled Song"}</div>
         <div className="item-bpm">{song.bpm} BPM</div>
@@ -123,6 +130,13 @@ const MetronomeApp = () => {
     }
   }, [activeSong?.bpm]);
 
+
+  const handleSelect = (id) => {
+    setActiveSongId(id);
+    setIsEditing(false);
+    setIsRunning(false);
+    setIsDrawerOpen(false); // Auto-minimize on selection
+  };
 
   const updateActiveSong = (updates) => {
     setSongs(prev => prev.map(s => s.id === activeSongId ? { ...s, ...updates } : s));
@@ -497,11 +511,11 @@ const MetronomeApp = () => {
             {!isDrawerOpen ? (
               // Hard-coded 2 song view when minimized
               <div className="minimized-preview">
-                <SongPreview song={activeSong} isActive={true} />
+                <SongPreview song={activeSong} isActive={true} onSelect={handleSelect} />
                 {songs.map((s, idx) => {
                   const currentIdx = songs.findIndex(item => item.id === activeSongId);
                   if (idx > currentIdx && idx <= currentIdx + 2) {
-                    return <SongPreview key={s.id} song={s} isNext={true} />;
+                    return <SongPreview key={s.id} song={s} isNext={true} onSelect={handleSelect} />;
                   }
                   return null;
                 })}
@@ -525,12 +539,7 @@ const MetronomeApp = () => {
                         key={song.id}
                         song={song}
                         activeSongId={activeSongId}
-                        onSelect={(id) => {
-                          setActiveSongId(id);
-                          setIsEditing(false);
-                          setIsRunning(false);
-                          setIsDrawerOpen(false); // Auto-minimize on selection
-                        }}
+                        onSelect={handleSelect}
                         onDelete={deleteSong}
                       />
                     ))}
