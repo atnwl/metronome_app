@@ -14,7 +14,6 @@
   --list-item-hover: rgba(255, 255, 255, 0.05);
   --slider-track: rgba(255, 255, 255, 0.3);
   --play-icon-color: #121212;
-  --album-placeholder-bg: #282828;
   --overlay-bg: linear-gradient(180deg, rgba(18, 18, 18, 0.2) 0%, rgba(18, 18, 18, 1) 85%);
 }
 
@@ -31,7 +30,6 @@
   --list-item-hover: rgba(0, 0, 0, 0.05);
   --slider-track: rgba(0, 0, 0, 0.2);
   --play-icon-color: #ffffff;
-  --album-placeholder-bg: #f0f0f0;
   --overlay-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 1) 85%);
 }
 
@@ -216,39 +214,39 @@ html {
   flex-direction: column;
   align-items: center;
   padding: 0 1.5rem;
-  margin-top: 0.5rem;
+  margin-top: 2rem;
   flex: 1;
   justify-content: flex-start;
 }
 
-.album-art-container {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  max-height: 28vh;
-  max-width: 260px;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  margin-bottom: 1rem;
-  overflow: hidden;
-  background: var(--album-placeholder-bg);
+.main-play-btn {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: var(--play-icon-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
+  margin-bottom: 2.5rem;
+  cursor: pointer;
+  box-shadow: 0 10px 40px rgba(29, 185, 84, 0.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.light-mode .album-art-container {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+.main-play-btn:active {
+  transform: scale(0.92);
 }
 
-.album-art-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.main-play-btn.playing {
+  background: var(--danger);
+  box-shadow: 0 10px 40px rgba(226, 33, 52, 0.3);
 }
 
-.album-placeholder {
-  color: #fff;
+.main-play-btn svg {
+  width: 64px;
+  height: 64px;
 }
 
 .song-info {
@@ -479,7 +477,7 @@ input[type=range]::-moz-range-track {
 
 .setlist-section {
   position: absolute;
-  top: calc(100dvh - 200px);
+  top: calc(100dvh - 290px);
   left: 0;
   width: 100%;
   height: calc(100dvh - 60px);
@@ -537,7 +535,7 @@ input[type=range]::-moz-range-track {
 .setlist-item {
   display: flex;
   align-items: center;
-  padding: 0.75rem 0.5rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
   transition: background 0.2s;
   border-radius: 8px;
@@ -560,26 +558,6 @@ input[type=range]::-moz-range-track {
 
 .drag-handle:active {
   cursor: grabbing;
-}
-
-.item-cover {
-  width: 48px;
-  height: 48px;
-  background: var(--album-placeholder-bg);
-  border-radius: 4px;
-  margin-right: 1rem;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.item-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .item-info {
@@ -664,32 +642,4 @@ input[type=range]::-moz-range-track {
   .landscape-warning {
     display: flex;
   }
-}
-.refresh-art-overlay {
-  position: absolute;
-  bottom: 0.5rem;
-  right: 0.5rem;
-  background: var(--glass-bg);
-  backdrop-filter: blur(5px);
-  border: 1px solid var(--border-light);
-  color: var(--text-main);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transition: all 0.2s;
-  z-index: 5;
-}
-
-.album-art-container:hover .refresh-art-overlay,
-.album-art-container:active .refresh-art-overlay {
-  opacity: 1;
-}
-
-.refresh-art-overlay:active {
-  transform: scale(0.9) rotate(180deg);
 }

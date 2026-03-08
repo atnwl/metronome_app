@@ -17,15 +17,8 @@ const placeholderGradients = [
 const SongPreview = ({ song, isActive, isNext }) => {
   return (
     <div className={`setlist-item ${isActive ? 'active' : ''} ${isNext ? 'next-preview' : ''}`} style={{ cursor: 'default' }}>
-      <div className="item-cover" style={{ background: (song.albumArt && song.albumArt !== 'not_found') ? 'transparent' : song.gradient }}>
-        {(song.albumArt && song.albumArt !== 'not_found') ? (
-          <img src={song.albumArt} alt="Cover" />
-        ) : (
-          <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
-        )}
-      </div>
       <div className="item-info">
-        <div className="item-title">{song.title}</div>
+        <div className="item-title">{song.title || "Untitled Song"}</div>
         <div className="item-bpm">{song.bpm} BPM</div>
       </div>
     </div>
@@ -66,15 +59,8 @@ const SortableSongItem = ({ song, activeSongId, onSelect, onDelete }) => {
       >
         <GripVertical size={20} />
       </div>
-      <div className="item-cover" style={{ background: (song.albumArt && song.albumArt !== 'not_found') ? 'transparent' : song.gradient }}>
-        {(song.albumArt && song.albumArt !== 'not_found') ? (
-          <img src={song.albumArt} alt="Cover" />
-        ) : (
-          <Music size={20} style={{ opacity: 0.5, color: '#fff' }} />
-        )}
-      </div>
       <div className="item-info">
-        <div className="item-title">{song.title}</div>
+        <div className="item-title">{song.title || "Untitled Song"}</div>
         <div className="item-bpm">{song.bpm} BPM</div>
       </div>
       <div className="item-actions">
@@ -147,53 +133,6 @@ const MetronomeApp = () => {
     setSongs(prev => prev.map(s => s.id === activeSongId ? { ...s, ...updates } : s));
   };
 
-  // Resilient Background Artwork Fetching Queue
-  const isFetchingArt = useRef(false);
-
-  const fetchMissingArt = async (forceAll = false) => {
-    if (isFetchingArt.current) return;
-    isFetchingArt.current = true;
-
-    // Filter for songs that need checking
-    const targets = songs.filter(s =>
-      (forceAll || s.albumArt === null || s.albumArt === 'not_found') &&
-      s.title &&
-      !s.title.startsWith('New') &&
-      !s.title.startsWith('Imported')
-    );
-
-    if (targets.length === 0 && forceAll) {
-      alert("No songs found to update artwork for.");
-      isFetchingArt.current = false;
-      return;
-    }
-
-    for (const songToFetch of targets) {
-      // Throttle to avoid hitting Apple rate limits
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      try {
-        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(songToFetch.title)}&media=music&entity=song&limit=1`);
-        const data = await res.json();
-        const url = (data.results && data.results.length > 0)
-          ? data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
-          : 'not_found';
-
-        setSongs(currentSongs => currentSongs.map(s => s.id === songToFetch.id ? { ...s, albumArt: url } : s));
-      } catch (e) {
-        console.error("Failed to fetch artwork from iTunes", e);
-        setSongs(currentSongs => currentSongs.map(s => s.id === songToFetch.id ? { ...s, albumArt: 'not_found' } : s));
-      }
-    }
-
-    if (forceAll) alert("Artwork check complete.");
-    isFetchingArt.current = false;
-  };
-
-  useEffect(() => {
-    fetchMissingArt();
-  }, [songs.length]); // Only auto-run when list length changes to avoid loops
-
   const audioContext = useRef(null);
   const timerID = useRef(null);
   const beatNumber = useRef(0);
@@ -204,11 +143,11 @@ const MetronomeApp = () => {
       showProgress: true,
       animate: true,
       steps: [
-        { element: '.play-pause-btn', popover: { title: 'Playback', description: 'Start, stop, and control the metronome pulse right here.', align: 'center' } },
-        { element: '.song-info', popover: { title: 'Edit Track', description: 'Tap the pencil to change the title. Editing also unlocks the BPM slider.', side: "top", align: 'start' } },
-        { element: '.add-btn-main', popover: { title: 'Add Song', description: 'Quickly add a new track to your setlist from here.', side: "left", align: 'center' } },
-        { element: '.tour-menu-btn', popover: { title: 'Toolbar Menu', description: 'Open this to mass-import documents, paste setlists, toggle theme, or launch this tutorial again.', side: 'bottom', align: 'end' } },
-        { element: '.drawer-hit-area', popover: { title: 'Swipe Drawer', description: 'Swipe this drawer UP to reveal your entire setlist. Use the grips next to any song to reorder them seamlessly.', side: 'top', align: 'center' } },
+        { element: '.play-pause-btn', popover: { title: 'Playback', description: 'Start and stop the metronome pulse right here.', align: 'center' } },
+        { element: '.song-info', popover: { title: 'Song Details', description: 'Tap to change the title or adjust the BPM.', side: "top", align: 'start' } },
+        { element: '.add-btn-main', popover: { title: 'Add Song', description: 'Quickly add a new track to your setlist.', side: "left", align: 'center' } },
+        { element: '.tour-menu-btn', popover: { title: 'Toolbar Menu', description: 'Menu for imports, theme, and clearing the list.', side: 'bottom', align: 'end' } },
+        { element: '.drawer-hit-area', popover: { title: 'Setlist Drawer', description: 'Swipe up to see and reorder your full setlist.', side: 'top', align: 'center' } },
       ]
     });
     driverObj.drive();
@@ -419,8 +358,8 @@ const MetronomeApp = () => {
 
   if (!activeSong) return null;
 
-  const bgVisual = (activeSong.albumArt && activeSong.albumArt !== 'not_found') ? `url(${activeSong.albumArt})` : (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none');
-  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 260) : 400;
+  const bgVisual = (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'var(--bg-color)');
+  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 350) : 400;
 
   return (
     <div onClick={() => isMenuOpen && setIsMenuOpen(false)}>
@@ -455,9 +394,6 @@ const MetronomeApp = () => {
                   <Upload size={16} /> Upload Setlist
                 </button>
                 <div className="dropdown-divider" />
-                <button onClick={() => { fetchMissingArt(true); setIsMenuOpen(false); }}>
-                  <RefreshCw size={16} /> Update Artwork
-                </button>
                 <button onClick={launchTutorial}>
                   <HelpCircle size={16} /> Launch Tutorial
                 </button>
@@ -480,20 +416,12 @@ const MetronomeApp = () => {
         </header>
 
         <section className="now-playing">
-          <div className="album-art-container" style={{ background: (activeSong.albumArt && activeSong.albumArt !== 'not_found') ? 'transparent' : activeSong.gradient }}>
-            {(activeSong.albumArt && activeSong.albumArt !== 'not_found') ? (
-              <img src={activeSong.albumArt} alt={activeSong.title} className="album-art-img" />
-            ) : (
-              <Music size={64} className="album-placeholder" style={{ opacity: 0.5 }} />
-            )}
-            <button
-              className="refresh-art-overlay"
-              onClick={() => fetchMissingArt(true)}
-              title="Refresh Artwork"
-            >
-              <RefreshCw size={18} />
-            </button>
-          </div>
+          <button
+            className={`main-play-btn ${isRunning ? 'playing' : ''}`}
+            onClick={() => setIsRunning(!isRunning)}
+          >
+            {isRunning ? <Square fill="currentColor" size={48} /> : <Play fill="currentColor" size={48} />}
+          </button>
 
           <div className="song-info">
             <input
@@ -532,15 +460,6 @@ const MetronomeApp = () => {
               onChange={(e) => handleBpmChange(parseInt(e.target.value))}
               disabled={!isEditing}
             />
-          </div>
-
-          <div className="main-controls">
-            <button
-              className={`play-pause-btn ${isRunning ? 'playing' : ''}`}
-              onClick={() => setIsRunning(!isRunning)}
-            >
-              {isRunning ? <Square fill="currentColor" /> : <Play fill="currentColor" />}
-            </button>
           </div>
         </section>
 
@@ -593,12 +512,13 @@ const MetronomeApp = () => {
               // Hard-coded 2 song view when minimized
               <div className="minimized-preview">
                 <SongPreview song={activeSong} isActive={true} />
-                {songs.findIndex(s => s.id === activeSongId) < songs.length - 1 && (
-                  <SongPreview
-                    song={songs[songs.findIndex(s => s.id === activeSongId) + 1]}
-                    isNext={true}
-                  />
-                )}
+                {songs.map((s, idx) => {
+                  const currentIdx = songs.findIndex(item => item.id === activeSongId);
+                  if (idx > currentIdx && idx <= currentIdx + 2) {
+                    return <SongPreview key={s.id} song={s} isNext={true} />;
+                  }
+                  return null;
+                })}
               </div>
             ) : (
               // Full sortable list when expanded
