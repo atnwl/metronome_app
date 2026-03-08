@@ -149,11 +149,11 @@ const MetronomeApp = () => {
   const wakeLock = useRef(null);
   const silentAudioRef = useRef(null);
 
-  // Screen Wake Lock to prevent sleep during playback
+  // Screen Wake Lock to keep the app alive at all times
   useEffect(() => {
     const requestWakeLock = async () => {
       try {
-        if ('wakeLock' in navigator) {
+        if ('wakeLock' in navigator && !wakeLock.current) {
           wakeLock.current = await navigator.wakeLock.request('screen');
         }
       } catch (err) {
@@ -168,21 +168,23 @@ const MetronomeApp = () => {
       }
     };
 
+    // Constant wake lock while app is open
+    requestWakeLock();
+
+    // Handle silent audio playback only when running
     if (isRunning) {
-      requestWakeLock();
       if (silentAudioRef.current) {
         silentAudioRef.current.play().catch(e => console.warn("Silent audio play failed", e));
       }
     } else {
-      releaseWakeLock();
       if (silentAudioRef.current) {
         silentAudioRef.current.pause();
       }
     }
 
-    // Re-request if visibility changes (necessary for mobile browsers)
+    // Re-request if visibility changes
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isRunning) {
+      if (document.visibilityState === 'visible') {
         requestWakeLock();
       }
     };
@@ -193,7 +195,7 @@ const MetronomeApp = () => {
       releaseWakeLock();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isRunning]);
+  }, [isRunning]); // Keep isRunning here to control the silent audio play/pause logic within the same effect
 
   const launchTutorial = () => {
     setIsMenuOpen(false);
