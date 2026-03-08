@@ -359,7 +359,7 @@ const MetronomeApp = () => {
   if (!activeSong) return null;
 
   const bgVisual = (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'var(--bg-color)');
-  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 420) : 400;
+  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 350) : 400;
 
   return (
     <div onClick={() => isMenuOpen && setIsMenuOpen(false)}>
@@ -514,7 +514,7 @@ const MetronomeApp = () => {
                 <SongPreview song={activeSong} isActive={true} />
                 {songs.map((s, idx) => {
                   const currentIdx = songs.findIndex(item => item.id === activeSongId);
-                  if (idx > currentIdx && idx <= currentIdx + 3) {
+                  if (idx > currentIdx && idx <= currentIdx + 2) {
                     return <SongPreview key={s.id} song={s} isNext={true} />;
                   }
                   return null;
