@@ -547,13 +547,32 @@ const MetronomeApp = () => {
         >
           <div
             className="drawer-hit-area"
-            style={{ padding: '0 2rem 1.5rem 2rem', cursor: 'grab', touchAction: 'none' }}
+            style={{
+              width: '100%',
+              height: '50px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'grab',
+              touchAction: 'none'
+            }}
             onPointerDown={(e) => dragControls.start(e)}
           >
-            <div className="drawer-pill" style={{ height: '6px', width: '50px' }} />
+            <div className="drawer-pill" style={{ height: '6px', width: '60px' }} />
           </div>
 
-          <div className="setlist-list" ref={listRef}>
+          <div
+            className="setlist-list"
+            ref={listRef}
+            onPointerDown={(e) => {
+              // Allow dragging the drawer by touching the background gaps of the list
+              if (e.target.classList.contains('setlist-list') ||
+                e.target.classList.contains('minimized-preview') ||
+                e.target.classList.contains('empty-state')) {
+                dragControls.start(e);
+              }
+            }}
+          >
             {!isDrawerOpen ? (
               // Hard-coded 2 song view when minimized
               <div className="minimized-preview">
