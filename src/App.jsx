@@ -227,8 +227,7 @@ const MetronomeApp = () => {
     osc.connect(gainNode);
     gainNode.connect(audioContext.current.destination);
 
-    const isDownbeat = beatNumber.current === 0;
-    osc.frequency.value = isDownbeat ? 1200 : 800;
+    osc.frequency.value = 1000; // Constant frequency for all beats
     osc.type = "sine";
 
     gainNode.gain.setValueAtTime(1, audioContext.current.currentTime);
