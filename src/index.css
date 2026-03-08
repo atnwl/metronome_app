@@ -1,6 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
+  --bg-color: #121212;
+  --panel-bg: #181818;
+  --accent: #ffffff;
+  --accent-hover: #b3b3b3;
+  --danger: #e22134;
+  --text-main: #ffffff;
+  --text-muted: #b3b3b3;
+  --border-light: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(0, 0, 0, 0.3);
+  --list-item-hover: rgba(255, 255, 255, 0.05);
+  --slider-track: rgba(255, 255, 255, 0.3);
+  --play-icon-color: #121212;
+}
+
+:root.light-mode {
   --bg-color: #dbeafe;
   /* Vivid light blue */
   --panel-bg: #ffffff;

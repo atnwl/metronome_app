@@ -370,6 +370,9 @@ const MetronomeApp = () => {
 
             {isMenuOpen && (
               <div className="dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => { setIsLightMode(!isLightMode); setIsMenuOpen(false); }}>
+                  {isLightMode ? <Moon size={16} /> : <Sun size={16} />} Toggle Theme
+                </button>
                 <button onClick={() => { handleClipboardPaste(); setIsMenuOpen(false); }}>
                   <ClipboardPaste size={16} /> Paste Setlist
                 </button>

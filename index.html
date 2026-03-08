@@ -7,6 +7,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="manifest" href="/manifest.json" />
   <title>ProBeat Setlist</title>
+  <script>
+    try {
+      if (localStorage.getItem('probeat_theme') === 'light') {
+        document.documentElement.classList.add('light-mode');
+      } else {
+        document.documentElement.classList.remove('light-mode');
+      }
+    } catch (e) { }
+  </script>
 </head>
 
 <body>
