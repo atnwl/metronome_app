@@ -192,7 +192,7 @@ const MetronomeApp = () => {
 
     // Extremely sharp attack and very fast exponential decay for a percussive click
     gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.4, now + 0.001);
+    gainNode.gain.linearRampToValueAtTime(0.8, now + 0.001);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
 
     osc.start(now);
