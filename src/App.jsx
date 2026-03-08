@@ -150,43 +150,49 @@ const MetronomeApp = () => {
   // Resilient Background Artwork Fetching Queue
   const isFetchingArt = useRef(false);
 
-  useEffect(() => {
-    const fetchMissingArt = async () => {
-      if (isFetchingArt.current) return;
-      isFetchingArt.current = true;
+  const fetchMissingArt = async (forceAll = false) => {
+    if (isFetchingArt.current) return;
+    isFetchingArt.current = true;
 
-      const missingIndex = songs.findIndex(s =>
-        s.albumArt === null &&
-        s.title &&
-        !s.title.startsWith('New') &&
-        !s.title.startsWith('Imported')
-      );
+    // Filter for songs that need checking
+    const targets = songs.filter(s =>
+      (forceAll || s.albumArt === null || s.albumArt === 'not_found') &&
+      s.title &&
+      !s.title.startsWith('New') &&
+      !s.title.startsWith('Imported')
+    );
 
-      if (missingIndex !== -1) {
-        const songToFetch = songs[missingIndex];
-        // Throttle to avoid hitting Apple rate limits
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        try {
-          const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(songToFetch.title)}&media=music&entity=song&limit=1`);
-          const data = await res.json();
-          const url = (data.results && data.results.length > 0)
-            ? data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
-            : 'not_found';
-
-          // Use functional state update so we never read stale song arrays
-          setSongs(currentSongs => currentSongs.map(s => s.id === songToFetch.id ? { ...s, albumArt: url } : s));
-        } catch (e) {
-          console.error("Failed to fetch artwork from iTunes", e);
-          setSongs(currentSongs => currentSongs.map(s => s.id === songToFetch.id ? { ...s, albumArt: 'not_found' } : s));
-        }
-      }
-
+    if (targets.length === 0 && forceAll) {
+      alert("No songs found to update artwork for.");
       isFetchingArt.current = false;
-    };
+      return;
+    }
 
+    for (const songToFetch of targets) {
+      // Throttle to avoid hitting Apple rate limits
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      try {
+        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(songToFetch.title)}&media=music&entity=song&limit=1`);
+        const data = await res.json();
+        const url = (data.results && data.results.length > 0)
+          ? data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
+          : 'not_found';
+
+        setSongs(currentSongs => currentSongs.map(s => s.id === songToFetch.id ? { ...s, albumArt: url } : s));
+      } catch (e) {
+        console.error("Failed to fetch artwork from iTunes", e);
+        setSongs(currentSongs => currentSongs.map(s => s.id === songToFetch.id ? { ...s, albumArt: 'not_found' } : s));
+      }
+    }
+
+    if (forceAll) alert("Artwork check complete.");
+    isFetchingArt.current = false;
+  };
+
+  useEffect(() => {
     fetchMissingArt();
-  }, [songs]);
+  }, [songs.length]); // Only auto-run when list length changes to avoid loops
 
   const audioContext = useRef(null);
   const timerID = useRef(null);
@@ -449,6 +455,9 @@ const MetronomeApp = () => {
                   <Upload size={16} /> Upload Setlist
                 </button>
                 <div className="dropdown-divider" />
+                <button onClick={() => { fetchMissingArt(true); setIsMenuOpen(false); }}>
+                  <RefreshCw size={16} /> Update Artwork
+                </button>
                 <button onClick={launchTutorial}>
                   <HelpCircle size={16} /> Launch Tutorial
                 </button>
@@ -477,6 +486,13 @@ const MetronomeApp = () => {
             ) : (
               <Music size={64} className="album-placeholder" style={{ opacity: 0.5 }} />
             )}
+            <button
+              className="refresh-art-overlay"
+              onClick={() => fetchMissingArt(true)}
+              title="Refresh Artwork"
+            >
+              <RefreshCw size={18} />
+            </button>
           </div>
 
           <div className="song-info">

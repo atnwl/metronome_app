@@ -665,3 +665,31 @@ input[type=range]::-moz-range-track {
     display: flex;
   }
 }
+.refresh-art-overlay {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(5px);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+  z-index: 5;
+}
+
+.album-art-container:hover .refresh-art-overlay,
+.album-art-container:active .refresh-art-overlay {
+  opacity: 1;
+}
+
+.refresh-art-overlay:active {
+  transform: scale(0.9) rotate(180deg);
+}
