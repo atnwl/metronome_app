@@ -146,6 +146,54 @@ const MetronomeApp = () => {
   const audioContext = useRef(null);
   const timerID = useRef(null);
   const beatNumber = useRef(0);
+  const wakeLock = useRef(null);
+  const silentAudioRef = useRef(null);
+
+  // Screen Wake Lock to prevent sleep during playback
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock.current = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.warn('Wake Lock request failed:', err);
+      }
+    };
+
+    const releaseWakeLock = async () => {
+      if (wakeLock.current) {
+        await wakeLock.current.release();
+        wakeLock.current = null;
+      }
+    };
+
+    if (isRunning) {
+      requestWakeLock();
+      if (silentAudioRef.current) {
+        silentAudioRef.current.play().catch(e => console.warn("Silent audio play failed", e));
+      }
+    } else {
+      releaseWakeLock();
+      if (silentAudioRef.current) {
+        silentAudioRef.current.pause();
+      }
+    }
+
+    // Re-request if visibility changes (necessary for mobile browsers)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isRunning) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      releaseWakeLock();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isRunning]);
 
   const launchTutorial = () => {
     setIsMenuOpen(false);
@@ -565,6 +613,14 @@ const MetronomeApp = () => {
             )}
           </div>
         </motion.section>
+
+        {/* Hidden Silent Audio for Mobile Keep-Alive */}
+        <audio
+          ref={silentAudioRef}
+          src="data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="
+          loop
+          style={{ display: 'none' }}
+        />
       </div>
     </div>
   );
