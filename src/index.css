@@ -215,8 +215,8 @@ html {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 2rem;
-  margin-top: 1rem;
+  padding: 0 1.5rem;
+  margin-top: 0.5rem;
   flex: 1;
   justify-content: flex-start;
 }
@@ -224,11 +224,11 @@ html {
 .album-art-container {
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-height: 38vh;
-  max-width: 280px;
+  max-height: 28vh;
+  max-width: 260px;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   overflow: hidden;
   background: var(--album-placeholder-bg);
   display: flex;
@@ -255,7 +255,7 @@ html {
   width: 100%;
   display: flex;
   flex-direction: column;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .title-input {
@@ -479,7 +479,7 @@ input[type=range]::-moz-range-track {
 
 .setlist-section {
   position: absolute;
-  top: calc(100dvh - 210px);
+  top: calc(100dvh - 200px);
   left: 0;
   width: 100%;
   height: calc(100dvh - 60px);
@@ -641,6 +641,7 @@ input[type=range]::-moz-range-track {
   padding: 2rem 0;
   opacity: 0.5;
 }
+
 /* Landscape Lock Overlay */
 .landscape-warning {
   display: none;

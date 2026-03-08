@@ -415,7 +415,7 @@ const MetronomeApp = () => {
   if (!activeSong) return null;
 
   const bgVisual = (activeSong.albumArt && activeSong.albumArt !== 'not_found') ? `url(${activeSong.albumArt})` : (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'none');
-  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 270) : 400;
+  const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 260) : 400;
 
   return (
     <div onClick={() => isMenuOpen && setIsMenuOpen(false)}>
