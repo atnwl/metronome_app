@@ -9,11 +9,6 @@ import { motion, useDragControls } from 'framer-motion';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-// Helper to grab a random placeholder album color/image
-const placeholderGradients = [
-  'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
-];
-
 const SongPreview = ({ song, isActive, isNext }) => {
   return (
     <div className={`setlist-item ${isActive ? 'active' : ''} ${isNext ? 'next-preview' : ''}`} style={{ cursor: 'default' }}>
@@ -77,10 +72,10 @@ const MetronomeApp = () => {
     try {
       const item = localStorage.getItem('spotify_setlist');
       return item ? JSON.parse(item) : [
-        { id: generateId(), title: "Welcome to ProBeat", bpm: 120, gradient: placeholderGradients[0], albumArt: null }
+        { id: generateId(), title: "Welcome to ProBeat", bpm: 120, albumArt: null }
       ];
     } catch {
-      return [{ id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0], albumArt: null }];
+      return [{ id: generateId(), title: "New Song", bpm: 120, albumArt: null }];
     }
   });
 
@@ -229,7 +224,6 @@ const MetronomeApp = () => {
       id: generateId(),
       title: "",
       bpm: 120,
-      gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)],
       albumArt: null
     };
     setSongs(prev => [...prev, newSong]);
@@ -247,7 +241,7 @@ const MetronomeApp = () => {
     setSongs(prev => {
       const filtered = prev.filter(s => s.id !== id);
       if (filtered.length === 0) {
-        return [{ id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0], albumArt: null }];
+        return [{ id: generateId(), title: "New Song", bpm: 120, albumArt: null }];
       }
       if (id === activeSongId) {
         setActiveSongId(filtered[0].id);
@@ -259,7 +253,7 @@ const MetronomeApp = () => {
 
   const clearAllSongs = () => {
     if (window.confirm("Are you sure you want to completely clear your Setlist?")) {
-      const defaultSong = { id: generateId(), title: "New Song", bpm: 120, gradient: placeholderGradients[0], albumArt: null };
+      const defaultSong = { id: generateId(), title: "New Song", bpm: 120, albumArt: null };
       setSongs([defaultSong]);
       setActiveSongId(defaultSong.id);
       setIsRunning(false);
@@ -293,7 +287,6 @@ const MetronomeApp = () => {
           id: generateId(),
           title: title || "Imported Song",
           bpm,
-          gradient: placeholderGradients[Math.floor(Math.random() * placeholderGradients.length)],
           albumArt: null
         });
       }
@@ -358,7 +351,6 @@ const MetronomeApp = () => {
 
   if (!activeSong) return null;
 
-  const bgVisual = (activeSong.gradient.includes('gradient') ? activeSong.gradient : 'var(--bg-color)');
   const drawerDragDistance = typeof window !== 'undefined' ? (window.innerHeight - 350) : 400;
 
   return (
@@ -368,12 +360,6 @@ const MetronomeApp = () => {
         <h2>Please rotate to Portrait</h2>
         <p style={{ opacity: 0.6, marginTop: '0.5rem' }}>ProBeat is optimized for vertical use.</p>
       </div>
-      <div
-        className="blur-bg"
-        style={{ backgroundImage: bgVisual }}
-      />
-      <div className="blur-overlay" />
-
       <div className="app-wrapper">
         <header className="top-nav">
           <div className="logo-text">ProBeat Setlist</div>
@@ -384,9 +370,6 @@ const MetronomeApp = () => {
 
             {isMenuOpen && (
               <div className="dropdown-menu" onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => { setIsLightMode(!isLightMode); setIsMenuOpen(false); }}>
-                  {isLightMode ? <Moon size={16} /> : <Sun size={16} />} Toggle Theme
-                </button>
                 <button onClick={() => { handleClipboardPaste(); setIsMenuOpen(false); }}>
                   <ClipboardPaste size={16} /> Paste Setlist
                 </button>
