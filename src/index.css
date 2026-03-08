@@ -1,8 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --bg-color: #121212;
-  --panel-bg: #181818;
+  --bg-color: #131b26;
+  /* Deep navy tint */
+  --panel-bg: #1a2230;
   --accent: #ffffff;
   --accent-hover: #b3b3b3;
   --danger: #e22134;
@@ -12,7 +13,7 @@
   --glass-bg: rgba(0, 0, 0, 0.3);
   --list-item-hover: rgba(255, 255, 255, 0.05);
   --slider-track: rgba(255, 255, 255, 0.3);
-  --play-icon-color: #121212;
+  --play-icon-color: #131b26;
 }
 
 :root.light-mode {
