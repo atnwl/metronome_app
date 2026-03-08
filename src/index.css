@@ -278,16 +278,32 @@ html {
 }
 
 .bpm-number.pulse {
-  animation: pulse-beat 0.1s ease-out;
+  animation: pulse-beat 0.15s ease-out;
   color: var(--accent);
-  text-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.meter-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--border-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.quarter-note-icon {
+  opacity: 0.8;
 }
 
 .bpm-label {
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-muted);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0px;
 }
 
 .edit-btn {

@@ -105,6 +105,7 @@ const MetronomeApp = () => {
   const activeSong = songs.find(s => s.id === activeSongId) || songs[0];
 
   const [isRunning, setIsRunning] = useState(false);
+  const [pulseKey, setPulseKey] = useState(0);
 
   // Persist Setlist
   useEffect(() => {
@@ -184,7 +185,7 @@ const MetronomeApp = () => {
     // Clave sound:
     // Uses a clean sine wave at a much higher frequency for that sharp "crack"
     // All beats are now set to the same frequency
-    osc.frequency.value = 2000;
+    osc.frequency.value = 1500;
     osc.type = "sine";
 
     const now = audioContext.current.currentTime;
@@ -198,6 +199,7 @@ const MetronomeApp = () => {
     osc.stop(now + 0.05);
 
     beatNumber.current = (beatNumber.current + 1) % 4;
+    setPulseKey(prev => prev + 1);
   };
 
   useEffect(() => {
@@ -441,9 +443,15 @@ const MetronomeApp = () => {
             />
             <div className="bpm-row">
               <div className="bpm-number-group">
-                <div className={`bpm-number ${isRunning ? 'pulse' : ''}`}>{activeSong.bpm}</div>
+                <div key={pulseKey} className={`bpm-number ${isRunning ? 'pulse' : ''}`}>
+                  {activeSong.bpm}
+                </div>
                 <div className="bpm-label-wrapper">
                   <div className="bpm-label">BPM</div>
+                  <div className="meter-badge">
+                    <span>4/4</span>
+                    <Music size={12} className="quarter-note-icon" />
+                  </div>
                   <button
                     className={`edit-btn ${isEditing ? 'active' : ''}`}
                     onClick={() => setIsEditing(!isEditing)}
