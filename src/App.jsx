@@ -185,7 +185,7 @@ const MetronomeApp = () => {
     // Clave sound:
     // Uses a clean sine wave at a much higher frequency for that sharp "crack"
     // All beats are now set to the same frequency
-    osc.frequency.value = 1500;
+    osc.frequency.value = 1900;
     osc.type = "sine";
 
     const now = audioContext.current.currentTime;
