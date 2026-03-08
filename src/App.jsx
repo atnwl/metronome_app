@@ -207,7 +207,8 @@ const MetronomeApp = () => {
 
     const scheduleNote = () => {
       playClick();
-      const secondsPerBeat = 60.0 / bpmRef.current;
+      // Calculate seconds per eighth note (half of a quarter note beat)
+      const secondsPerBeat = (60.0 / bpmRef.current) / 2;
       expected += secondsPerBeat * 1000;
       const delay = expected - Date.now();
       timerID.current = setTimeout(scheduleNote, delay > 0 ? delay : 0);
@@ -449,7 +450,7 @@ const MetronomeApp = () => {
                 <div className="bpm-label-wrapper">
                   <div className="bpm-label">BPM</div>
                   <div className="meter-badge">
-                    <span>4/4</span>
+                    <span>8th Notes</span>
                     <Music size={12} className="quarter-note-icon" />
                   </div>
                   <button
