@@ -181,14 +181,21 @@ const MetronomeApp = () => {
     osc.connect(gainNode);
     gainNode.connect(audioContext.current.destination);
 
-    osc.frequency.value = 1000; // Constant frequency for all beats
+    // Clave sound:
+    // Uses a clean sine wave at a much higher frequency for that sharp "crack"
+    // All beats are now set to the same frequency
+    osc.frequency.value = 2000;
     osc.type = "sine";
 
-    gainNode.gain.setValueAtTime(1, audioContext.current.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.current.currentTime + 0.1);
+    const now = audioContext.current.currentTime;
 
-    osc.start(audioContext.current.currentTime);
-    osc.stop(audioContext.current.currentTime + 0.1);
+    // Extremely sharp attack and very fast exponential decay for a percussive click
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.4, now + 0.001);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+
+    osc.start(now);
+    osc.stop(now + 0.05);
 
     beatNumber.current = (beatNumber.current + 1) % 4;
   };
